@@ -10,6 +10,7 @@ import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, LockIcon, MicIcon } from '@/components/icons';
 import { ReactionsRow } from '@/components/ReactionsRow';
+import { flagFor } from '@/constants/countries';
 import { addReaction, fetchNextVoice, markViewed, type Voice } from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -121,19 +122,24 @@ function VoiceInner() {
   }
 
   // status === 'ready'
+  const username = voice?.username ?? null;
   return (
     <View style={styles.flexBody}>
       <View style={styles.reveal}>
-        <Avatar name="?" size={92} />
+        <Avatar name={username ?? '?'} size={92} />
         <Text style={styles.kicker}>una voz acaba de llegar</Text>
-        <Text style={styles.title}>Alguien tiene algo que decirte</Text>
+        <Text style={styles.title}>
+          {username ? `@${username} tiene algo que decirte` : 'Alguien tiene algo que decirte'}
+        </Text>
         {voice?.country ? (
           <View style={styles.countryPill}>
-            <Text style={styles.countryText}>desde {voice.country}</Text>
+            <Text style={styles.countryText}>
+              desde {voice.country} {flagFor(voice.country)}
+            </Text>
           </View>
         ) : (
           <View style={styles.countryPill}>
-            <Text style={styles.countryText}>anónima · sin nombre</Text>
+            <Text style={styles.countryText}>anónima · sin lugar</Text>
           </View>
         )}
       </View>

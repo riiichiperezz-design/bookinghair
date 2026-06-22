@@ -1,3 +1,4 @@
+import { getMyProfile } from './profile';
 import { ensureSession } from './session';
 import { supabase } from './supabase';
 
@@ -10,6 +11,7 @@ export type Voice = {
   country: string | null;
   created_at: string;
   audioUrl: string;
+  username: string | null;
 };
 
 function extFromType(type: string) {
@@ -25,6 +27,7 @@ function extFromType(type: string) {
 /** Sube la grabación a Storage y crea la fila en `voices`. */
 export async function uploadVoice(uri: string, durationMs: number) {
   const user = await ensureSession();
+  const profile = await getMyProfile();
 
   const res = await fetch(uri);
   const blob = await res.blob();
@@ -40,6 +43,7 @@ export async function uploadVoice(uri: string, durationMs: number) {
     sender_id: user.id,
     audio_path: path,
     duration_ms: Math.round(durationMs),
+    country: profile?.country ?? null,
   });
   if (insErr) throw insErr;
 }
@@ -59,7 +63,7 @@ export async function fetchNextVoice(): Promise<Voice | null> {
 
   let query = supabase
     .from('voices')
-    .select('id, audio_path, duration_ms, country, created_at')
+    .select('id, sender_id, audio_path, duration_ms, country, created_at')
     .neq('sender_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1);
@@ -74,8 +78,23 @@ export async function fetchNextVoice(): Promise<Voice | null> {
   const row = data?.[0];
   if (!row) return null;
 
+  // Perfil del remitente (para revelar @usuario y país).
+  const { data: sender } = await supabase
+    .from('profiles')
+    .select('username, country')
+    .eq('id', row.sender_id)
+    .maybeSingle();
+
   const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(row.audio_path);
-  return { ...row, audioUrl: pub.publicUrl };
+  return {
+    id: row.id,
+    audio_path: row.audio_path,
+    duration_ms: row.duration_ms,
+    created_at: row.created_at,
+    country: row.country ?? sender?.country ?? null,
+    username: sender?.username ?? null,
+    audioUrl: pub.publicUrl,
+  };
 }
 
 /** Marca una voz como vista para no volver a mostrarla. */

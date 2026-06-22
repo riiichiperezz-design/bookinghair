@@ -7,6 +7,7 @@ import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { InboxIcon } from '@/components/icons';
 import { Waveform } from '@/components/Waveform';
+import { getMyProfile } from '@/lib/profile';
 import { unseenCount } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
@@ -14,17 +15,29 @@ export default function Home() {
   const router = useRouter();
   const [unseen, setUnseen] = useState(0);
 
-  // Refresca el contador cada vez que la home recupera el foco.
+  // Al recuperar el foco: si no hay perfil, manda a /setup; si sí, actualiza
+  // el contador de voces nuevas.
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      unseenCount()
-        .then((n) => active && setUnseen(n))
-        .catch(() => {});
+      (async () => {
+        try {
+          const profile = await getMyProfile();
+          if (!active) return;
+          if (!profile?.username) {
+            router.replace('/setup');
+            return;
+          }
+          const n = await unseenCount();
+          if (active) setUnseen(n);
+        } catch {
+          // sin red / backend sin configurar: dejamos la home como está
+        }
+      })();
       return () => {
         active = false;
       };
-    }, [])
+    }, [router])
   );
 
   return (
