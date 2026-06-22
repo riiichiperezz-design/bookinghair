@@ -17,6 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ensureSession } from '@/lib/session';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -38,6 +39,11 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  // Calienta la sesión anónima en segundo plano (se persiste tras la 1ª vez).
+  useEffect(() => {
+    ensureSession().catch(() => {});
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;

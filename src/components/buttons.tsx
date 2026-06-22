@@ -13,6 +13,7 @@ type PrimaryButtonProps = {
   onPress?: (e: GestureResponderEvent) => void;
   icon?: React.ReactNode;
   badge?: number;
+  disabled?: boolean;
 };
 
 export function PrimaryButton({
@@ -20,11 +21,17 @@ export function PrimaryButton({
   onPress,
   icon,
   badge,
+  disabled,
 }: PrimaryButtonProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.primary,
+        pressed && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
       {icon != null && (
         <View>
@@ -89,6 +96,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   badge: {
     position: 'absolute',

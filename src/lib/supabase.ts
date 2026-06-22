@@ -17,11 +17,16 @@ if (!supabaseAnonKey) {
   );
 }
 
+// En el render estático de web (Node) no existe `window`, y AsyncStorage en web
+// usa window.localStorage. Para no romper el SSG, solo persistimos la sesión en
+// cliente (navegador o nativo); en servidor el cliente es efímero.
+const isServer = typeof window === 'undefined';
+
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
+    ...(isServer ? {} : { storage: AsyncStorage }),
+    autoRefreshToken: !isServer,
+    persistSession: !isServer,
     detectSessionInUrl: false,
   },
 });

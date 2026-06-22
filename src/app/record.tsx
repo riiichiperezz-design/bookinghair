@@ -16,6 +16,7 @@ import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, InboxIcon } from '@/components/icons';
 import { RecordButton } from '@/components/RecordButton';
+import { uploadVoice } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
 function formatMs(ms: number) {
@@ -88,6 +89,7 @@ function Recorder() {
   const [recordedMs, setRecordedMs] = useState(0);
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const player = useAudioPlayer(recordedUri ?? undefined);
 
@@ -146,9 +148,20 @@ function Recorder() {
     setRecordedMs(0);
   };
 
-  const send = () => {
-    // TODO: subir el audio a Supabase Storage y crear la fila en `voices`.
-    setSent(true);
+  const send = async () => {
+    if (!recordedUri || sending) return;
+    setSending(true);
+    try {
+      await uploadVoice(recordedUri, recordedMs);
+      setSent(true);
+    } catch (e) {
+      Alert.alert(
+        'No se pudo enviar',
+        e instanceof Error ? e.message : 'Inténtalo de nuevo.'
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   if (sent) {
@@ -187,9 +200,10 @@ function Recorder() {
           />
           <View style={styles.spacer} />
           <PrimaryButton
-            label="Enviar voz"
+            label={sending ? 'Enviando…' : 'Enviar voz'}
             icon={<InboxIcon size={20} color="#ffffff" />}
             onPress={send}
+            disabled={sending}
           />
           <GhostButton label="regrabar" onPress={reRecord} />
         </View>

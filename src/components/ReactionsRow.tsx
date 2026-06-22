@@ -5,8 +5,12 @@ import { colors, radius } from '@/theme';
 
 const REACTIONS = ['❤️', '😂', '🔥', '🥹'] as const;
 
+type Props = {
+  onReact?: (emoji: string) => void;
+};
+
 /** Fila de reacciones rápidas con emoji. Selección única y toggle. */
-export function ReactionsRow() {
+export function ReactionsRow({ onReact }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
 
   return (
@@ -16,7 +20,11 @@ export function ReactionsRow() {
         return (
           <Pressable
             key={emoji}
-            onPress={() => setSelected(isSelected ? null : emoji)}
+            onPress={() => {
+              const next = isSelected ? null : emoji;
+              setSelected(next);
+              if (next) onReact?.(next);
+            }}
             style={({ pressed }) => [
               styles.item,
               isSelected && styles.itemSelected,

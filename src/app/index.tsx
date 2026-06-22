@@ -1,4 +1,5 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -6,10 +7,26 @@ import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { InboxIcon } from '@/components/icons';
 import { Waveform } from '@/components/Waveform';
+import { unseenCount } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
 export default function Home() {
   const router = useRouter();
+  const [unseen, setUnseen] = useState(0);
+
+  // Refresca el contador cada vez que la home recupera el foco.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      unseenCount()
+        .then((n) => active && setUnseen(n))
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
+
   return (
     <EmberBackground>
       <SafeAreaView style={styles.safe}>
@@ -34,7 +51,7 @@ export default function Home() {
           <PrimaryButton
             label="Abrir mis voces"
             icon={<InboxIcon size={20} color="#ffffff" />}
-            badge={2}
+            badge={unseen}
             onPress={() => router.push('/voice')}
           />
           <GhostButton
