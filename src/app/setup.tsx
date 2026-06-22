@@ -35,7 +35,7 @@ export default function SetupScreen() {
     setError(null);
     try {
       await saveProfile(username, country);
-      router.replace('/');
+      router.replace('/intro');
     } catch (e) {
       if (e instanceof UsernameTakenError) {
         setError(e.message);
