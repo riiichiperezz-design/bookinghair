@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,6 +9,7 @@ import { Waveform } from '@/components/Waveform';
 import { colors, fonts, spacing } from '@/theme';
 
 export default function Home() {
+  const router = useRouter();
   return (
     <EmberBackground>
       <SafeAreaView style={styles.safe}>
@@ -33,6 +35,7 @@ export default function Home() {
             label="Abrir mis voces"
             icon={<InboxIcon size={20} color="#ffffff" />}
             badge={2}
+            onPress={() => router.push('/voice')}
           />
           <GhostButton label="soltar una voz" />
         </View>

@@ -60,3 +60,51 @@ export function PlayIcon({ size = 22, color = colors.textPrimary }: IconProps) {
     </Svg>
   );
 }
+
+export function PauseIcon({ size = 22, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <Rect x={6} y={5} width={4} height={14} rx={1.5} />
+      <Rect x={14} y={5} width={4} height={14} rx={1.5} />
+    </Svg>
+  );
+}
+
+export function ArrowLeftIcon({
+  size = 22,
+  color = colors.textPrimary,
+}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M19 12H5M5 12l6-6M5 12l6 6"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function LockIcon({ size = 13, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect
+        x={5}
+        y={11}
+        width={14}
+        height={10}
+        rx={2}
+        stroke={color}
+        strokeWidth={2}
+      />
+      <Path
+        d="M8 11V8a4 4 0 0 1 8 0v3"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
