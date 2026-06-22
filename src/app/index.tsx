@@ -9,12 +9,13 @@ import { InboxIcon } from '@/components/icons';
 import { Waveform } from '@/components/Waveform';
 import { getMyProfile } from '@/lib/profile';
 import { getCredits, receivedCount } from '@/lib/voices';
-import { colors, fonts, spacing } from '@/theme';
+import { colors, fonts, radius, spacing } from '@/theme';
 
 export default function Home() {
   const router = useRouter();
   const [credits, setCredits] = useState(0);
   const [received, setReceived] = useState(0);
+  const [username, setUsername] = useState<string | null>(null);
 
   // Al recuperar el foco: si no hay perfil, manda a /setup; si sí, actualiza
   // los créditos (voces que puedes abrir).
@@ -29,6 +30,7 @@ export default function Home() {
             router.replace('/setup');
             return;
           }
+          setUsername(profile.username);
           const [n, r] = await Promise.all([getCredits(), receivedCount()]);
           if (active) {
             setCredits(Math.max(0, n));
@@ -47,6 +49,21 @@ export default function Home() {
   return (
     <EmberBackground>
       <SafeAreaView style={styles.safe}>
+        {/* Barra superior: @usuario → editar perfil */}
+        <View style={styles.topBar}>
+          {username && (
+            <Pressable
+              onPress={() => router.push('/profile')}
+              hitSlop={8}
+              style={({ pressed }) => [styles.userChip, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Editar perfil"
+            >
+              <Text style={styles.userChipText}>@{username}</Text>
+            </Pressable>
+          )}
+        </View>
+
         <View style={styles.content}>
           {/* Wordmark */}
           <Text style={styles.wordmark}>
@@ -99,6 +116,29 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     paddingHorizontal: spacing.xl,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    minHeight: 36,
+    paddingTop: spacing.sm,
+  },
+  userChip: {
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.md,
+  },
+  userChipText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: colors.textPrimary,
+  },
+  pressed: {
+    opacity: 0.6,
   },
   content: {
     flex: 1,
