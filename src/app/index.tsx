@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GhostButton, PrimaryButton } from '@/components/buttons';
@@ -8,12 +8,13 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { InboxIcon } from '@/components/icons';
 import { Waveform } from '@/components/Waveform';
 import { getMyProfile } from '@/lib/profile';
-import { getCredits } from '@/lib/voices';
+import { getCredits, receivedCount } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
 export default function Home() {
   const router = useRouter();
   const [credits, setCredits] = useState(0);
+  const [received, setReceived] = useState(0);
 
   // Al recuperar el foco: si no hay perfil, manda a /setup; si sí, actualiza
   // los créditos (voces que puedes abrir).
@@ -28,8 +29,11 @@ export default function Home() {
             router.replace('/setup');
             return;
           }
-          const n = await getCredits();
-          if (active) setCredits(Math.max(0, n));
+          const [n, r] = await Promise.all([getCredits(), receivedCount()]);
+          if (active) {
+            setCredits(Math.max(0, n));
+            setReceived(r);
+          }
         } catch {
           // sin red / backend sin configurar: dejamos la home como está
         }
@@ -71,6 +75,20 @@ export default function Home() {
             label="soltar una voz"
             onPress={() => router.push('/record')}
           />
+          {received > 0 && (
+            <Pressable
+              onPress={() => router.push('/received')}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.receivedLink,
+                pressed && styles.receivedLinkPressed,
+              ]}
+            >
+              <Text style={styles.receivedText}>
+                ver tus voces ({received})
+              </Text>
+            </Pressable>
+          )}
         </View>
       </SafeAreaView>
     </EmberBackground>
@@ -123,5 +141,17 @@ const styles = StyleSheet.create({
   },
   actions: {
     paddingBottom: spacing.xl,
+  },
+  receivedLink: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  receivedLinkPressed: {
+    opacity: 0.6,
+  },
+  receivedText: {
+    fontFamily: fonts.label,
+    fontSize: 13,
+    color: colors.textSecondary,
   },
 });

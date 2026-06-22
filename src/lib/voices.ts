@@ -108,6 +108,53 @@ export async function claimVoice(): Promise<Voice | null> {
   };
 }
 
+/** Voces que YA has reclamado (tuyas), de la más reciente a la más antigua. */
+export async function fetchReceivedVoices(): Promise<Voice[]> {
+  const user = await ensureSession();
+  const { data, error } = await supabase
+    .from('voices')
+    .select('id, sender_id, audio_path, duration_ms, country, created_at, claimed_at')
+    .eq('claimed_by', user.id)
+    .order('claimed_at', { ascending: false });
+  if (error) throw error;
+
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+
+  const senderIds = [...new Set(rows.map((r) => r.sender_id))];
+  const { data: profs } = await supabase
+    .from('profiles')
+    .select('id, username, country')
+    .in('id', senderIds);
+  const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
+
+  return rows.map((r) => {
+    const prof = profMap.get(r.sender_id);
+    const { data: pub } = supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(r.audio_path);
+    return {
+      id: r.id,
+      audio_path: r.audio_path,
+      duration_ms: r.duration_ms,
+      created_at: r.created_at,
+      country: r.country ?? prof?.country ?? null,
+      username: prof?.username ?? null,
+      audioUrl: pub.publicUrl,
+    };
+  });
+}
+
+/** Número de voces recibidas (reclamadas) por el usuario. */
+export async function receivedCount(): Promise<number> {
+  const user = await ensureSession();
+  const { count } = await supabase
+    .from('voices')
+    .select('id', { count: 'exact', head: true })
+    .eq('claimed_by', user.id);
+  return count ?? 0;
+}
+
 /** Añade/cambia la reacción del usuario a una voz. */
 export async function addReaction(voiceId: string, emoji: string) {
   const user = await ensureSession();
