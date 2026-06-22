@@ -1,7 +1,14 @@
 import { useAudioPlayer } from 'expo-audio';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AudioPlayerCard } from '@/components/AudioPlayerCard';
@@ -159,13 +166,22 @@ function VoiceInner() {
           }}
         />
         <Pressable
+          onPress={() =>
+            Alert.alert(
+              'Contestar es premium',
+              'Responder con tu voz será una función de pago que llegará pronto. Por ahora, reacciona con un emoji.'
+            )
+          }
           style={({ pressed }) => [styles.reply, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Contestarle (bloqueado)"
+          accessibilityLabel="Contestarle (premium, próximamente)"
         >
           <MicIcon size={18} color={colors.emberBright} />
           <Text style={styles.replyText}>Contestarle</Text>
-          <LockIcon size={13} color={colors.emberBright} />
+          <View style={styles.premiumTag}>
+            <LockIcon size={11} color={colors.textOnEmber} />
+            <Text style={styles.premiumText}>premium</Text>
+          </View>
         </Pressable>
       </View>
     </View>
@@ -264,6 +280,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 14,
     color: '#FF9460',
+  },
+  premiumTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.ember,
+    borderRadius: radius.pill,
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+  },
+  premiumText: {
+    fontFamily: fonts.labelBold,
+    fontSize: 9,
+    letterSpacing: 0.5,
+    color: colors.textOnEmber,
+    textTransform: 'uppercase',
   },
   pressed: {
     opacity: 0.8,

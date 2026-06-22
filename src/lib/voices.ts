@@ -56,26 +56,37 @@ async function viewedIds(userId: string): Promise<string[]> {
   return (data ?? []).map((r) => r.voice_id as string);
 }
 
-/** Devuelve la siguiente voz no escuchada (de otra persona), o null. */
+/**
+ * Devuelve una voz ALEATORIA de otra persona que aún no hayas escuchado, o null.
+ * El sentido de ecco: recibes un audio único al azar de cualquiera del mundo.
+ */
 export async function fetchNextVoice(): Promise<Voice | null> {
   const user = await ensureSession();
   const seen = await viewedIds(user.id);
 
-  let query = supabase
+  // 1) Candidatas (solo ids, ligero) de todo el pool, menos las mías y vistas.
+  let idQuery = supabase
     .from('voices')
-    .select('id, sender_id, audio_path, duration_ms, country, created_at')
+    .select('id')
     .neq('sender_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1);
+    .limit(500);
 
   if (seen.length > 0) {
-    query = query.not('id', 'in', `(${seen.join(',')})`);
+    idQuery = idQuery.not('id', 'in', `(${seen.join(',')})`);
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
+  const { data: ids, error: idErr } = await idQuery;
+  if (idErr) throw idErr;
+  if (!ids || ids.length === 0) return null;
 
-  const row = data?.[0];
+  // 2) Elegimos una al azar y traemos la fila completa.
+  const pick = ids[Math.floor(Math.random() * ids.length)].id as string;
+  const { data: row, error } = await supabase
+    .from('voices')
+    .select('id, sender_id, audio_path, duration_ms, country, created_at')
+    .eq('id', pick)
+    .maybeSingle();
+  if (error) throw error;
   if (!row) return null;
 
   // Perfil del remitente (para revelar @usuario y país).
