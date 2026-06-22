@@ -1,8 +1,29 @@
+import { decode as decodeBase64 } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
+
 import { getMyProfile } from './profile';
 import { ensureSession } from './session';
 import { supabase } from './supabase';
 
 const BUCKET = 'voices';
+
+const AUDIO_TYPES: Record<string, string> = {
+  webm: 'audio/webm',
+  m4a: 'audio/mp4',
+  mp4: 'audio/mp4',
+  caf: 'audio/x-caf',
+  wav: 'audio/wav',
+  mp3: 'audio/mpeg',
+  aac: 'audio/aac',
+};
+
+/** Deduce el content-type de un audio a partir de la extensión de su uri. */
+function contentTypeFromUri(uri: string): string {
+  const clean = uri.split('?')[0].toLowerCase();
+  const ext = clean.split('.').pop() ?? '';
+  return AUDIO_TYPES[ext] ?? 'audio/mp4';
+}
 
 export type Voice = {
   id: string;
@@ -29,14 +50,25 @@ export async function uploadVoice(uri: string, durationMs: number) {
   const user = await ensureSession();
   const profile = await getMyProfile();
 
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  const contentType = blob.type || 'audio/webm';
+  // Web: el uri es un blob: y fetch().blob() funciona. Nativo: hay que leer el
+  // fichero file:// con expo-file-system y subir el ArrayBuffer.
+  let body: Blob | ArrayBuffer;
+  let contentType: string;
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(uri)).blob();
+    body = blob;
+    contentType = blob.type || 'audio/webm';
+  } else {
+    const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+    body = decodeBase64(base64);
+    contentType = contentTypeFromUri(uri);
+  }
+
   const path = `${user.id}/${Date.now()}.${extFromType(contentType)}`;
 
   const { error: upErr } = await supabase.storage
     .from(BUCKET)
-    .upload(path, blob, { contentType, upsert: false });
+    .upload(path, body, { contentType, upsert: false });
   if (upErr) throw upErr;
 
   const { error: insErr } = await supabase.from('voices').insert({
