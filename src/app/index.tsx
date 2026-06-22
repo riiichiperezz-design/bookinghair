@@ -37,7 +37,10 @@ export default function Home() {
             badge={2}
             onPress={() => router.push('/voice')}
           />
-          <GhostButton label="soltar una voz" />
+          <GhostButton
+            label="soltar una voz"
+            onPress={() => router.push('/record')}
+          />
         </View>
       </SafeAreaView>
     </EmberBackground>

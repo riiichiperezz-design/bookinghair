@@ -27,6 +27,12 @@
     "plugins": [
       "expo-router",
       [
+        "expo-audio",
+        {
+          "microphonePermission": "ecco necesita el micrófono para grabar tus voces."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#140805",
