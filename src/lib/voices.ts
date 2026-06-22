@@ -155,6 +155,67 @@ export async function receivedCount(): Promise<number> {
   return count ?? 0;
 }
 
+export type ReactionCount = { emoji: string; count: number };
+
+export type SentVoice = {
+  id: string;
+  audio_path: string;
+  duration_ms: number;
+  created_at: string;
+  audioUrl: string;
+  claimed: boolean;
+  reactions: ReactionCount[];
+};
+
+/** Voces que has ENVIADO, con su estado y las reacciones que han recibido. */
+export async function fetchSentVoices(): Promise<SentVoice[]> {
+  const user = await ensureSession();
+  const { data, error } = await supabase
+    .from('voices')
+    .select('id, audio_path, duration_ms, created_at, claimed_by')
+    .eq('sender_id', user.id)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+  const { data: reacts } = await supabase
+    .from('reactions')
+    .select('voice_id, emoji')
+    .in('voice_id', ids);
+
+  // Agregamos las reacciones por voz y emoji.
+  const byVoice = new Map<string, Map<string, number>>();
+  for (const r of reacts ?? []) {
+    const m = byVoice.get(r.voice_id) ?? new Map<string, number>();
+    m.set(r.emoji, (m.get(r.emoji) ?? 0) + 1);
+    byVoice.set(r.voice_id, m);
+  }
+
+  return rows.map((r) => {
+    const { data: pub } = supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(r.audio_path);
+    const counts = byVoice.get(r.id);
+    const reactions: ReactionCount[] = counts
+      ? [...counts.entries()]
+          .map(([emoji, count]) => ({ emoji, count }))
+          .sort((a, b) => b.count - a.count)
+      : [];
+    return {
+      id: r.id,
+      audio_path: r.audio_path,
+      duration_ms: r.duration_ms,
+      created_at: r.created_at,
+      audioUrl: pub.publicUrl,
+      claimed: r.claimed_by != null,
+      reactions,
+    };
+  });
+}
+
 /** Añade/cambia la reacción del usuario a una voz. */
 export async function addReaction(voiceId: string, emoji: string) {
   const user = await ensureSession();

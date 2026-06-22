@@ -15,7 +15,12 @@ import { Avatar } from '@/components/Avatar';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, PauseIcon, PlayIcon } from '@/components/icons';
 import { flagFor } from '@/constants/countries';
-import { fetchReceivedVoices, type Voice } from '@/lib/voices';
+import {
+  fetchReceivedVoices,
+  fetchSentVoices,
+  type SentVoice,
+  type Voice,
+} from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 function formatMs(ms: number) {
@@ -25,9 +30,12 @@ function formatMs(ms: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+type Tab = 'received' | 'sent';
+
 export default function ReceivedScreen() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [tab, setTab] = useState<Tab>('received');
   useEffect(() => setMounted(true), []);
 
   return (
@@ -45,8 +53,22 @@ export default function ReceivedScreen() {
           <Text style={styles.headerTitle}>tus voces</Text>
           <View style={styles.headerSpacer} />
         </View>
+
+        <View style={styles.tabs}>
+          <TabButton
+            label="Recibidas"
+            active={tab === 'received'}
+            onPress={() => setTab('received')}
+          />
+          <TabButton
+            label="Enviadas"
+            active={tab === 'sent'}
+            onPress={() => setTab('sent')}
+          />
+        </View>
+
         {mounted ? (
-          <ReceivedList />
+          <Lists tab={tab} />
         ) : (
           <View style={styles.center}>
             <ActivityIndicator color={colors.ember} size="large" />
@@ -57,29 +79,56 @@ export default function ReceivedScreen() {
   );
 }
 
-function ReceivedList() {
-  const router = useRouter();
-  const [voices, setVoices] = useState<Voice[] | null>(null);
+function TabButton({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.tab, active && styles.tabActive]}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+    >
+      <Text style={[styles.tabText, active && styles.tabTextActive]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function Lists({ tab }: { tab: Tab }) {
+  const [received, setReceived] = useState<Voice[] | null>(null);
+  const [sent, setSent] = useState<SentVoice[] | null>(null);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
 
-  const current = useMemo(
-    () => voices?.find((v) => v.id === currentId) ?? null,
-    [voices, currentId]
-  );
-  const player = useAudioPlayer(current?.audioUrl ?? undefined);
+  const currentUrl = useMemo(() => {
+    const inReceived = received?.find((v) => v.id === currentId)?.audioUrl;
+    const inSent = sent?.find((v) => v.id === currentId)?.audioUrl;
+    return inReceived ?? inSent;
+  }, [received, sent, currentId]);
+
+  const player = useAudioPlayer(currentUrl ?? undefined);
 
   useEffect(() => {
     let active = true;
     fetchReceivedVoices()
-      .then((v) => active && setVoices(v))
-      .catch(() => active && setVoices([]));
+      .then((v) => active && setReceived(v))
+      .catch(() => active && setReceived([]));
+    fetchSentVoices()
+      .then((v) => active && setSent(v))
+      .catch(() => active && setSent([]));
     return () => {
       active = false;
     };
   }, []);
 
-  // Al cambiar de pista, reproduce desde el principio.
   useEffect(() => {
     if (!currentId) return;
     player.seekTo(0);
@@ -102,7 +151,8 @@ function ReceivedList() {
     }
   };
 
-  if (voices === null) {
+  const list = tab === 'received' ? received : sent;
+  if (list === null) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={colors.ember} size="large" />
@@ -110,28 +160,32 @@ function ReceivedList() {
     );
   }
 
-  if (voices.length === 0) {
+  if (list.length === 0) {
     return (
       <View style={styles.center}>
-        <Text style={styles.bigEmoji}>📭</Text>
-        <Text style={styles.emptyTitle}>Aún no has recibido voces</Text>
+        <Text style={styles.bigEmoji}>{tab === 'received' ? '📭' : '📡'}</Text>
+        <Text style={styles.emptyTitle}>
+          {tab === 'received'
+            ? 'Aún no has recibido voces'
+            : 'Aún no has enviado nada'}
+        </Text>
         <Text style={styles.emptySubtitle}>
-          Manda una al mundo y reclama la de un desconocido.
+          {tab === 'received'
+            ? 'Manda una al mundo y reclama la de un desconocido.'
+            : 'Suelta tu primera voz al mundo.'}
         </Text>
       </View>
     );
   }
 
-  return (
-    <FlatList
-      data={voices}
-      keyExtractor={(v) => v.id}
-      contentContainerStyle={styles.list}
-      showsVerticalScrollIndicator={false}
-      renderItem={({ item }) => {
-        const isCurrent = currentId === item.id;
-        const isPlaying = isCurrent && playing;
-        return (
+  if (tab === 'received') {
+    return (
+      <FlatList
+        data={received ?? []}
+        keyExtractor={(v) => v.id}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
           <View style={styles.item}>
             <Avatar name={item.username ?? '?'} size={44} />
             <View style={styles.itemInfo}>
@@ -144,25 +198,81 @@ function ReceivedList() {
                   : formatMs(item.duration_ms)}
               </Text>
             </View>
-            <Pressable
+            <PlayButton
+              playing={currentId === item.id && playing}
               onPress={() => toggle(item.id)}
-              style={({ pressed }) => [
-                styles.playBtn,
-                pressed && styles.pressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={isPlaying ? 'Pausar' : 'Reproducir'}
-            >
-              {isPlaying ? (
-                <PauseIcon size={20} color="#ffffff" />
-              ) : (
-                <PlayIcon size={20} color="#ffffff" />
-              )}
-            </Pressable>
+            />
           </View>
-        );
-      }}
+        )}
+      />
+    );
+  }
+
+  return (
+    <FlatList
+      data={sent ?? []}
+      keyExtractor={(v) => v.id}
+      contentContainerStyle={styles.list}
+      showsVerticalScrollIndicator={false}
+      renderItem={({ item }) => (
+        <View style={styles.item}>
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemName} numberOfLines={1}>
+              Tu voz · {formatMs(item.duration_ms)}
+            </Text>
+            <View style={styles.sentMetaRow}>
+              <Text
+                style={[
+                  styles.statusDot,
+                  { color: item.claimed ? colors.emberBright : colors.textMuted },
+                ]}
+              >
+                ●
+              </Text>
+              <Text style={styles.itemMeta}>
+                {item.claimed ? 'escuchada' : 'esperando'}
+              </Text>
+              {item.reactions.length > 0 && (
+                <View style={styles.reactionChips}>
+                  {item.reactions.map((r) => (
+                    <Text key={r.emoji} style={styles.reactionChip}>
+                      {r.emoji} {r.count}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+          <PlayButton
+            playing={currentId === item.id && playing}
+            onPress={() => toggle(item.id)}
+          />
+        </View>
+      )}
     />
+  );
+}
+
+function PlayButton({
+  playing,
+  onPress,
+}: {
+  playing: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.playBtn, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={playing ? 'Pausar' : 'Reproducir'}
+    >
+      {playing ? (
+        <PauseIcon size={20} color="#ffffff" />
+      ) : (
+        <PlayIcon size={20} color="#ffffff" />
+      )}
+    </Pressable>
   );
 }
 
@@ -186,13 +296,39 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 22,
   },
+  tabs: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  tabActive: {
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.ember,
+  },
+  tabText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  tabTextActive: {
+    color: colors.textPrimary,
+  },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   list: {
-    paddingTop: spacing.xl,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
     gap: spacing.md,
   },
@@ -219,6 +355,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  sentMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+    flexWrap: 'wrap',
+  },
+  statusDot: {
+    fontSize: 9,
+  },
+  reactionChips: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  reactionChip: {
+    fontFamily: fonts.labelBold,
+    fontSize: 12,
+    color: colors.textPrimary,
   },
   playBtn: {
     width: 42,
