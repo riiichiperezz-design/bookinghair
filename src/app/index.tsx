@@ -8,15 +8,15 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { InboxIcon } from '@/components/icons';
 import { Waveform } from '@/components/Waveform';
 import { getMyProfile } from '@/lib/profile';
-import { unseenCount } from '@/lib/voices';
+import { getCredits } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
 export default function Home() {
   const router = useRouter();
-  const [unseen, setUnseen] = useState(0);
+  const [credits, setCredits] = useState(0);
 
   // Al recuperar el foco: si no hay perfil, manda a /setup; si sí, actualiza
-  // el contador de voces nuevas.
+  // los créditos (voces que puedes abrir).
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -28,8 +28,8 @@ export default function Home() {
             router.replace('/setup');
             return;
           }
-          const n = await unseenCount();
-          if (active) setUnseen(n);
+          const n = await getCredits();
+          if (active) setCredits(Math.max(0, n));
         } catch {
           // sin red / backend sin configurar: dejamos la home como está
         }
@@ -64,7 +64,7 @@ export default function Home() {
           <PrimaryButton
             label="Abrir mis voces"
             icon={<InboxIcon size={20} color="#ffffff" />}
-            badge={unseen}
+            badge={credits}
             onPress={() => router.push('/voice')}
           />
           <GhostButton

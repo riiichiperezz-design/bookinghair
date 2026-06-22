@@ -24,7 +24,7 @@ function extFromType(type: string) {
   return 'audio';
 }
 
-/** Sube la grabación a Storage y crea la fila en `voices`. */
+/** Sube la grabación a Storage y crea la fila en `voices` (entra al pool). */
 export async function uploadVoice(uri: string, durationMs: number) {
   const user = await ensureSession();
   const profile = await getMyProfile();
@@ -48,48 +48,48 @@ export async function uploadVoice(uri: string, durationMs: number) {
   if (insErr) throw insErr;
 }
 
-async function viewedIds(userId: string): Promise<string[]> {
-  const { data } = await supabase
-    .from('voice_views')
-    .select('voice_id')
-    .eq('viewer_id', userId);
-  return (data ?? []).map((r) => r.voice_id as string);
+/**
+ * Créditos para recibir = voces enviadas − voces reclamadas.
+ * Mandas una para poder abrir una (intercambio).
+ */
+export async function getCredits(): Promise<number> {
+  const user = await ensureSession();
+  const [sent, claimed] = await Promise.all([
+    supabase
+      .from('voices')
+      .select('id', { count: 'exact', head: true })
+      .eq('sender_id', user.id),
+    supabase
+      .from('voices')
+      .select('id', { count: 'exact', head: true })
+      .eq('claimed_by', user.id),
+  ]);
+  return (sent.count ?? 0) - (claimed.count ?? 0);
 }
 
 /**
- * Devuelve una voz ALEATORIA de otra persona que aún no hayas escuchado, o null.
- * El sentido de ecco: recibes un audio único al azar de cualquiera del mundo.
+ * Reclama una voz aleatoria del pool (entrega única). El servidor comprueba los
+ * créditos y marca la voz como tuya de forma atómica. Devuelve la voz o null
+ * (sin créditos o pool vacío).
  */
-export async function fetchNextVoice(): Promise<Voice | null> {
-  const user = await ensureSession();
-  const seen = await viewedIds(user.id);
-
-  // 1) Candidatas (solo ids, ligero) de todo el pool, menos las mías y vistas.
-  let idQuery = supabase
-    .from('voices')
-    .select('id')
-    .neq('sender_id', user.id)
-    .limit(500);
-
-  if (seen.length > 0) {
-    idQuery = idQuery.not('id', 'in', `(${seen.join(',')})`);
-  }
-
-  const { data: ids, error: idErr } = await idQuery;
-  if (idErr) throw idErr;
-  if (!ids || ids.length === 0) return null;
-
-  // 2) Elegimos una al azar y traemos la fila completa.
-  const pick = ids[Math.floor(Math.random() * ids.length)].id as string;
-  const { data: row, error } = await supabase
-    .from('voices')
-    .select('id, sender_id, audio_path, duration_ms, country, created_at')
-    .eq('id', pick)
-    .maybeSingle();
+export async function claimVoice(): Promise<Voice | null> {
+  await ensureSession();
+  const { data, error } = await supabase.rpc('claim_voice');
   if (error) throw error;
+
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | {
+        id: string;
+        sender_id: string;
+        audio_path: string;
+        duration_ms: number;
+        country: string | null;
+        created_at: string;
+      }
+    | null
+    | undefined;
   if (!row) return null;
 
-  // Perfil del remitente (para revelar @usuario y país).
   const { data: sender } = await supabase
     .from('profiles')
     .select('username, country')
@@ -108,14 +108,6 @@ export async function fetchNextVoice(): Promise<Voice | null> {
   };
 }
 
-/** Marca una voz como vista para no volver a mostrarla. */
-export async function markViewed(voiceId: string) {
-  const user = await ensureSession();
-  await supabase
-    .from('voice_views')
-    .upsert({ voice_id: voiceId, viewer_id: user.id });
-}
-
 /** Añade/cambia la reacción del usuario a una voz. */
 export async function addReaction(voiceId: string, emoji: string) {
   const user = await ensureSession();
@@ -125,22 +117,4 @@ export async function addReaction(voiceId: string, emoji: string) {
       { voice_id: voiceId, user_id: user.id, emoji },
       { onConflict: 'voice_id,user_id' }
     );
-}
-
-/** Número de voces nuevas (de otros, no escuchadas). */
-export async function unseenCount(): Promise<number> {
-  const user = await ensureSession();
-  const seen = await viewedIds(user.id);
-
-  let query = supabase
-    .from('voices')
-    .select('id', { count: 'exact', head: true })
-    .neq('sender_id', user.id);
-
-  if (seen.length > 0) {
-    query = query.not('id', 'in', `(${seen.join(',')})`);
-  }
-
-  const { count } = await query;
-  return count ?? 0;
 }

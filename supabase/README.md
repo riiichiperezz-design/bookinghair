@@ -12,12 +12,16 @@ ecco no tiene login visible: cada dispositivo recibe una sesión anónima autom�
 
 ## 2. Crear las tablas, RLS y el bucket de audios
 
-- Ve a **SQL Editor → New query**.
-- Pega el contenido de [`migrations/0001_init.sql`](./migrations/0001_init.sql).
-- Pulsa **Run**.
+En **SQL Editor → New query**, ejecuta **en orden** estos dos scripts (pega cada
+uno, pulsa **Run**, y luego el siguiente):
 
-Esto crea las tablas `profiles`, `voices`, `voice_views`, `reactions`, sus políticas
-de seguridad (RLS) y el bucket público `voices` para los audios.
+1. [`migrations/0001_init.sql`](./migrations/0001_init.sql) — crea las tablas
+   `profiles`, `voices`, `voice_views`, `reactions`, sus políticas de seguridad
+   (RLS) y el bucket público `voices`.
+2. [`migrations/0002_claim.sql`](./migrations/0002_claim.sql) — añade la entrega
+   única (1 a 1) y la función `claim_voice()` ("mandar para recibir").
+
+Si ya habías ejecutado el `0001`, basta con ejecutar ahora el `0002`.
 
 ## 3. Listo
 

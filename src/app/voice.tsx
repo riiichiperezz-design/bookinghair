@@ -18,7 +18,7 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, LockIcon, MicIcon } from '@/components/icons';
 import { ReactionsRow } from '@/components/ReactionsRow';
 import { flagFor } from '@/constants/countries';
-import { addReaction, fetchNextVoice, markViewed, type Voice } from '@/lib/voices';
+import { addReaction, claimVoice, getCredits, type Voice } from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 function formatMs(ms: number) {
@@ -52,7 +52,7 @@ export default function VoiceScreen() {
   );
 }
 
-type Status = 'loading' | 'ready' | 'empty' | 'error';
+type Status = 'loading' | 'ready' | 'empty' | 'needSend' | 'error';
 
 function VoiceInner() {
   const router = useRouter();
@@ -64,18 +64,26 @@ function VoiceInner() {
 
   useEffect(() => {
     let active = true;
-    fetchNextVoice()
-      .then((v) => {
+    (async () => {
+      try {
+        const credits = await getCredits();
+        if (!active) return;
+        if (credits <= 0) {
+          setStatus('needSend');
+          return;
+        }
+        const v = await claimVoice();
         if (!active) return;
         if (v) {
           setVoice(v);
           setStatus('ready');
-          markViewed(v.id).catch(() => {});
         } else {
           setStatus('empty');
         }
-      })
-      .catch(() => active && setStatus('error'));
+      } catch {
+        if (active) setStatus('error');
+      }
+    })();
     return () => {
       active = false;
     };
@@ -100,21 +108,33 @@ function VoiceInner() {
     );
   }
 
-  if (status === 'empty' || status === 'error') {
+  if (status !== 'ready') {
+    const copy = {
+      needSend: {
+        emoji: '🎙️',
+        title: 'Manda una voz para recibir',
+        subtitle:
+          'En ecco das para recibir: suelta un audio al mundo y te llegará el de un desconocido.',
+      },
+      empty: {
+        emoji: '🌙',
+        title: 'No hay voces ahora mismo',
+        subtitle:
+          'Ya las has escuchado todas. Vuelve en un rato: cada audio se entrega a una sola persona.',
+      },
+      error: {
+        emoji: '😕',
+        title: 'Algo salió mal',
+        subtitle: 'Revisa tu conexión e inténtalo otra vez.',
+      },
+    }[status];
+
     return (
       <View style={styles.flexBody}>
         <Centered>
-          <Text style={styles.bigEmoji}>{status === 'error' ? '😕' : '🌙'}</Text>
-          <Text style={styles.title}>
-            {status === 'error'
-              ? 'Algo salió mal'
-              : 'No tienes voces nuevas'}
-          </Text>
-          <Text style={styles.subtitle}>
-            {status === 'error'
-              ? 'Revisa tu conexión e inténtalo otra vez.'
-              : 'Suelta una voz y espera a que alguien te conteste.'}
-          </Text>
+          <Text style={styles.bigEmoji}>{copy.emoji}</Text>
+          <Text style={styles.title}>{copy.title}</Text>
+          <Text style={styles.subtitle}>{copy.subtitle}</Text>
         </Centered>
         <View style={styles.bottom}>
           <PrimaryButton
