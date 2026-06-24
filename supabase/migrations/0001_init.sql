@@ -51,32 +51,43 @@ alter table public.voice_views enable row level security;
 alter table public.reactions enable row level security;
 
 -- profiles: cada quien gestiona el suyo; lectura pública.
+drop policy if exists "profiles read" on public.profiles;
 create policy "profiles read" on public.profiles
   for select using (true);
+drop policy if exists "profiles upsert own" on public.profiles;
 create policy "profiles upsert own" on public.profiles
   for insert with check (auth.uid() = id);
+drop policy if exists "profiles update own" on public.profiles;
 create policy "profiles update own" on public.profiles
   for update using (auth.uid() = id);
 
 -- voices: cualquiera autenticado puede leer (para recibir); solo creas las tuyas.
+drop policy if exists "voices read" on public.voices;
 create policy "voices read" on public.voices
   for select to authenticated using (true);
+drop policy if exists "voices insert own" on public.voices;
 create policy "voices insert own" on public.voices
   for insert to authenticated with check (auth.uid() = sender_id);
+drop policy if exists "voices delete own" on public.voices;
 create policy "voices delete own" on public.voices
   for delete to authenticated using (auth.uid() = sender_id);
 
 -- voice_views: solo tus propias vistas.
+drop policy if exists "views read own" on public.voice_views;
 create policy "views read own" on public.voice_views
   for select to authenticated using (auth.uid() = viewer_id);
+drop policy if exists "views insert own" on public.voice_views;
 create policy "views insert own" on public.voice_views
   for insert to authenticated with check (auth.uid() = viewer_id);
 
 -- reactions: lectura pública (para contar); solo creas/editas la tuya.
+drop policy if exists "reactions read" on public.reactions;
 create policy "reactions read" on public.reactions
   for select using (true);
+drop policy if exists "reactions insert own" on public.reactions;
 create policy "reactions insert own" on public.reactions
   for insert to authenticated with check (auth.uid() = user_id);
+drop policy if exists "reactions update own" on public.reactions;
 create policy "reactions update own" on public.reactions
   for update to authenticated using (auth.uid() = user_id);
 
@@ -88,9 +99,11 @@ values ('voices', 'voices', true)
 on conflict (id) do nothing;
 
 -- Subir: cualquier usuario autenticado en el bucket 'voices'.
+drop policy if exists "voices storage upload" on storage.objects;
 create policy "voices storage upload" on storage.objects
   for insert to authenticated with check (bucket_id = 'voices');
 
--- Leer: público (bucket público).
+-- Leer: público (bucket público). NOTA: 0003 lo cambia a privado.
+drop policy if exists "voices storage read" on storage.objects;
 create policy "voices storage read" on storage.objects
   for select to public using (bucket_id = 'voices');
