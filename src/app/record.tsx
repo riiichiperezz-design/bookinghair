@@ -19,6 +19,7 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, InboxIcon } from '@/components/icons';
 import { RecordButton } from '@/components/RecordButton';
 import { haptics } from '@/lib/haptics';
+import { inviteFriends } from '@/lib/share';
 import { uploadVoice } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
@@ -175,7 +176,7 @@ function Recorder() {
         </Animated.Text>
         <Text style={styles.title}>Tu voz va de camino</Text>
         <Text style={styles.subtitle}>
-          Llegará sin tu nombre. Que la descubran.
+          Llegará sin tu nombre a un desconocido del mundo. Que la descubran.
         </Text>
         <View style={styles.sentActions}>
           <PrimaryButton
@@ -183,6 +184,7 @@ function Recorder() {
             icon={<InboxIcon size={20} color="#ffffff" />}
             onPress={() => router.replace('/')}
           />
+          <GhostButton label="Invitar a un amigo" onPress={inviteFriends} />
         </View>
       </View>
     );

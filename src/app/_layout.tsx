@@ -17,6 +17,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { BrandLoader } from '@/components/BrandLoader';
+import { ensureReminderScheduled } from '@/lib/notifications';
 import { ensureSession } from '@/lib/session';
 import { colors } from '@/theme';
 
@@ -40,13 +42,14 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  // Calienta la sesión anónima en segundo plano (se persiste tras la 1ª vez).
+  // Calienta la sesión anónima y reprograma el recordatorio diario.
   useEffect(() => {
     ensureSession().catch(() => {});
+    ensureReminderScheduled().catch(() => {});
   }, []);
 
   if (!fontsLoaded && !fontError) {
-    return null;
+    return <BrandLoader />;
   }
 
   return (

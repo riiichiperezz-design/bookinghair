@@ -5,9 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
-import { InboxIcon } from '@/components/icons';
+import { BellIcon, InboxIcon } from '@/components/icons';
 import { Waveform } from '@/components/Waveform';
+import { getNewActivityCount } from '@/lib/activity';
 import { getMyProfile } from '@/lib/profile';
+import { touchStreak } from '@/lib/streak';
 import { getCredits, receivedCount } from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -16,6 +18,8 @@ export default function Home() {
   const [credits, setCredits] = useState(0);
   const [received, setReceived] = useState(0);
   const [username, setUsername] = useState<string | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [activity, setActivity] = useState(0);
 
   // Al recuperar el foco: si no hay perfil, manda a /setup; si sí, actualiza
   // los créditos (voces que puedes abrir).
@@ -31,10 +35,17 @@ export default function Home() {
             return;
           }
           setUsername(profile.username);
-          const [n, r] = await Promise.all([getCredits(), receivedCount()]);
+          const [n, r, s, a] = await Promise.all([
+            getCredits(),
+            receivedCount(),
+            touchStreak(),
+            getNewActivityCount(),
+          ]);
           if (active) {
             setCredits(Math.max(0, n));
             setReceived(r);
+            setStreak(s.count);
+            setActivity(a);
           }
         } catch {
           // sin red / backend sin configurar: dejamos la home como está
@@ -49,19 +60,47 @@ export default function Home() {
   return (
     <EmberBackground>
       <SafeAreaView style={styles.safe}>
-        {/* Barra superior: @usuario → editar perfil */}
+        {/* Barra superior: racha · @usuario */}
         <View style={styles.topBar}>
-          {username && (
-            <Pressable
-              onPress={() => router.push('/profile')}
-              hitSlop={8}
-              style={({ pressed }) => [styles.userChip, pressed && styles.pressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Editar perfil"
-            >
-              <Text style={styles.userChipText}>@{username}</Text>
-            </Pressable>
+          {streak > 0 ? (
+            <View style={styles.streakChip}>
+              <Text style={styles.streakText}>🔥 {streak}</Text>
+            </View>
+          ) : (
+            <View />
           )}
+          <View style={styles.topRight}>
+            <Pressable
+              onPress={() => router.push('/activity')}
+              hitSlop={8}
+              style={({ pressed }) => [styles.bellBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Novedades"
+            >
+              <BellIcon size={20} color={colors.textPrimary} />
+              {activity > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {activity > 9 ? '9+' : activity}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            {username && (
+              <Pressable
+                onPress={() => router.push('/profile')}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.userChip,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Editar perfil"
+              >
+                <Text style={styles.userChipText}>@{username}</Text>
+              </Pressable>
+            )}
+          </View>
         </View>
 
         <View style={styles.content}>
@@ -119,10 +158,48 @@ const styles = StyleSheet.create({
   },
   topBar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 36,
     paddingTop: spacing.sm,
+  },
+  streakChip: {
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.md,
+  },
+  streakText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: colors.textPrimary,
+  },
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  bellBtn: {
+    padding: 4,
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    borderRadius: 8,
+    backgroundColor: colors.ember,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellBadgeText: {
+    fontFamily: fonts.labelBold,
+    fontSize: 9,
+    color: '#ffffff',
   },
   userChip: {
     backgroundColor: colors.surface,

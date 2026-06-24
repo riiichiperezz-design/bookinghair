@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
+import { enableDailyReminder } from '@/lib/notifications';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 const STEPS = [
@@ -51,7 +52,14 @@ export default function IntroScreen() {
         </View>
 
         <View style={styles.footer}>
-          <PrimaryButton label="Empezar" onPress={() => router.replace('/')} />
+          <PrimaryButton
+            label="Empezar"
+            onPress={async () => {
+              // Prime de permiso con contexto: avisos para no perder la racha.
+              await enableDailyReminder();
+              router.replace('/');
+            }}
+          />
         </View>
       </SafeAreaView>
     </EmberBackground>
