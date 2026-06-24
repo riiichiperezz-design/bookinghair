@@ -20,6 +20,7 @@ import { ArrowLeftIcon, LockIcon, MicIcon } from '@/components/icons';
 import { ReactionsRow } from '@/components/ReactionsRow';
 import { flagFor } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
+import { inviteFriends } from '@/lib/share';
 import { addReaction, claimVoice, getCredits, type Voice } from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -144,7 +145,14 @@ function VoiceInner() {
             icon={<MicIcon size={20} color="#ffffff" />}
             onPress={() => router.replace('/record')}
           />
-          <GhostButton label="volver al inicio" onPress={() => router.replace('/')} />
+          {status === 'empty' ? (
+            <GhostButton label="Invitar a amigos" onPress={inviteFriends} />
+          ) : (
+            <GhostButton
+              label="volver al inicio"
+              onPress={() => router.replace('/')}
+            />
+          )}
         </View>
       </View>
     );

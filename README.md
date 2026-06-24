@@ -1,56 +1,65 @@
-# Welcome to your Expo app 👋
+# ecco 🔥
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App social de **mensajes de voz anónimos**. Mandas una voz al mundo y recibes la
+de un total desconocido. Cada audio es **único**: se entrega a una sola persona.
 
-## Get started
+> _"Alguien te ha mandado algo. No sabes quién. Solo le das al play."_
 
-1. Install dependencies
+## El bucle
 
-   ```bash
-   npm install
-   ```
+1. **Sueltas una voz** (graba y envía, sin decir quién eres).
+2. **Das para recibir**: por cada voz que mandas, puedes reclamar la de otro.
+3. **Entrega única (1 a 1)**: al abrirla, esa voz es solo tuya y sale del pool.
+4. **Reaccionas** con un emoji. _Contestar_ es una función premium (próximamente).
 
-2. Start the app
+## Stack
 
-   ```bash
-   npx expo start
-   ```
+- **Expo SDK 56** + **expo-router** (TypeScript)
+- **expo-audio** (grabar/reproducir) · **Supabase** (datos + Storage + auth anónima)
+- **react-native-reanimated** (animaciones) · **expo-notifications** (recordatorios)
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Puesta en marcha
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Crea un `.env` con tus claves de Supabase (las `EXPO_PUBLIC_*` se embeben en el cliente):
 
-### Other setup steps
+```
+EXPO_PUBLIC_SUPABASE_URL=...
+EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Configura el backend siguiendo [`supabase/README.md`](./supabase/README.md):
+activa el login anónimo y ejecuta las migraciones `0001` y `0002`.
 
-## Learn more
+Arranca:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npx expo start      # pulsa 'w' para web
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Para probar en el móvil (Expo Go no soporta SDK 56) usa un development build:
+ver [`MOBILE.md`](./MOBILE.md).
 
-## Join the community
+## Estructura
 
-Join our community of developers creating universal apps.
+```
+src/
+  app/            # rutas (expo-router): home, voice, record, received,
+                  #   activity, setup, intro, profile
+  components/     # UI reutilizable (botones, onda, reproductor, iconos…)
+  constants/      # países
+  lib/            # supabase, sesión, voces, perfil, rachas, novedades,
+                  #   notificaciones, háptica, compartir, storage
+  theme/          # sistema de diseño "brasa" (colores, tipografías…)
+supabase/         # migraciones SQL + guía del dashboard
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Retención y viralidad
+
+- **Rachas diarias** (🔥) con celebración de hitos.
+- **Novedades**: quién reaccionó a tus voces + estadísticas.
+- **Recordatorio diario** local para no perder la racha.
+- **Invitar** con la hoja de compartir del sistema.
