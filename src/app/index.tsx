@@ -6,11 +6,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { BellIcon, InboxIcon } from '@/components/icons';
+import {
+  isStreakMilestone,
+  StreakCelebration,
+} from '@/components/StreakCelebration';
 import { Waveform } from '@/components/Waveform';
 import { getNewActivityCount } from '@/lib/activity';
+import { haptics } from '@/lib/haptics';
 import { getMyProfile } from '@/lib/profile';
 import { touchStreak } from '@/lib/streak';
-import { getCredits, receivedCount } from '@/lib/voices';
+import { getCredits, receivedCount, waitingCount } from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 export default function Home() {
@@ -20,6 +25,8 @@ export default function Home() {
   const [username, setUsername] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
   const [activity, setActivity] = useState(0);
+  const [waiting, setWaiting] = useState(0);
+  const [celebrate, setCelebrate] = useState<number | null>(null);
 
   // Al recuperar el foco: si no hay perfil, manda a /setup; si sí, actualiza
   // los créditos (voces que puedes abrir).
@@ -35,17 +42,23 @@ export default function Home() {
             return;
           }
           setUsername(profile.username);
-          const [n, r, s, a] = await Promise.all([
+          const [n, r, s, a, w] = await Promise.all([
             getCredits(),
             receivedCount(),
             touchStreak(),
             getNewActivityCount(),
+            waitingCount(),
           ]);
           if (active) {
             setCredits(Math.max(0, n));
             setReceived(r);
             setStreak(s.count);
             setActivity(a);
+            setWaiting(w);
+            if (s.isNewDay && isStreakMilestone(s.count)) {
+              haptics.success();
+              setCelebrate(s.count);
+            }
           }
         } catch {
           // sin red / backend sin configurar: dejamos la home como está
@@ -117,6 +130,11 @@ export default function Home() {
           {/* Titular */}
           <Text style={styles.title}>Alguien te ha mandado algo</Text>
           <Text style={styles.subtitle}>No sabes quién. Solo le das al play.</Text>
+          {waiting > 0 && (
+            <Text style={styles.waiting}>
+              🌍 {waiting} {waiting === 1 ? 'voz dando vueltas' : 'voces dando vueltas'} por el mundo
+            </Text>
+          )}
         </View>
 
         {/* Acciones */}
@@ -147,6 +165,13 @@ export default function Home() {
           )}
         </View>
       </SafeAreaView>
+
+      {celebrate != null && (
+        <StreakCelebration
+          count={celebrate}
+          onClose={() => setCelebrate(null)}
+        />
+      )}
     </EmberBackground>
   );
 }
@@ -255,6 +280,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  waiting: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 12,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.lg,
   },
   actions: {
     paddingBottom: spacing.xl,

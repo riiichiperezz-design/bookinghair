@@ -23,6 +23,9 @@ import { inviteFriends } from '@/lib/share';
 import { uploadVoice } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
+const MAX_MS = 60_000; // duración máxima de una voz
+const MIN_MS = 1_000; // duración mínima para poder enviar
+
 function formatMs(ms: number) {
   const total = Math.floor(ms / 1000);
   const m = Math.floor(total / 60);
@@ -77,7 +80,7 @@ function IdleBody({
       </View>
       <Text style={styles.timer}>{timer}</Text>
       <Text style={styles.hint}>
-        {recording ? 'toca para parar' : 'toca para empezar a grabar'}
+        {recording ? 'toca para parar · máx 60s' : 'toca para empezar a grabar'}
       </Text>
     </View>
   );
@@ -137,6 +140,14 @@ function Recorder() {
     }
   };
 
+  // Auto-stop al llegar al máximo (60 s).
+  useEffect(() => {
+    if (recorderState.isRecording && (recorderState.durationMillis ?? 0) >= MAX_MS) {
+      stopRecording();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recorderState.durationMillis, recorderState.isRecording]);
+
   const togglePreview = () => {
     if (previewPlaying) {
       player.pause();
@@ -191,6 +202,7 @@ function Recorder() {
   }
 
   const hasRecording = recordedUri != null && !recorderState.isRecording;
+  const tooShort = recordedMs < MIN_MS;
 
   if (hasRecording) {
     return (
@@ -205,12 +217,17 @@ function Recorder() {
             playing={previewPlaying}
             onTogglePlay={togglePreview}
           />
+          {tooShort && (
+            <Text style={styles.warn}>
+              Muy corta. Graba algo un poco más largo.
+            </Text>
+          )}
           <View style={styles.spacer} />
           <PrimaryButton
             label={sending ? 'Enviando…' : 'Enviar voz'}
             icon={<InboxIcon size={20} color="#ffffff" />}
             onPress={send}
-            disabled={sending}
+            disabled={sending || tooShort}
           />
           <GhostButton label="regrabar" onPress={reRecord} />
         </View>
@@ -288,6 +305,13 @@ const styles = StyleSheet.create({
   },
   spacer: {
     height: spacing.lg,
+  },
+  warn: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 12,
+    color: colors.emberSoft,
+    textAlign: 'center',
+    marginTop: spacing.md,
   },
   bigEmoji: {
     fontSize: 56,

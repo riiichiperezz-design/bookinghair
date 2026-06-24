@@ -177,6 +177,16 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
   });
 }
 
+/** Voces sin reclamar dando vueltas por el mundo ahora mismo (señal "viva"). */
+export async function waitingCount(): Promise<number> {
+  await ensureSession();
+  const { count } = await supabase
+    .from('voices')
+    .select('id', { count: 'exact', head: true })
+    .is('claimed_by', null);
+  return count ?? 0;
+}
+
 /** Número de voces recibidas (reclamadas) por el usuario. */
 export async function receivedCount(): Promise<number> {
   const user = await ensureSession();
