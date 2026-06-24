@@ -18,6 +18,7 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon } from '@/components/icons';
 import { COUNTRIES } from '@/constants/countries';
 import { deleteMyData, getAccountEmail, linkAccount } from '@/lib/account';
+import { enableDailyReminder } from '@/lib/notifications';
 import { getMyProfile, saveProfile, UsernameTakenError } from '@/lib/profile';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -37,6 +38,7 @@ export default function ProfileScreen() {
   const [linking, setLinking] = useState(false);
   const [linkErr, setLinkErr] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [reminderMsg, setReminderMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -227,6 +229,20 @@ export default function ProfileScreen() {
 
               {/* Más */}
               <Text style={styles.sectionLabel}>más</Text>
+              <Pressable
+                onPress={async () => {
+                  const ok = await enableDailyReminder();
+                  setReminderMsg(
+                    ok
+                      ? 'Recordatorio diario activado ✓'
+                      : 'El recordatorio solo está disponible en la app móvil.'
+                  );
+                }}
+                style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+              >
+                <Text style={styles.linkText}>Activar recordatorio diario 🔥</Text>
+              </Pressable>
+              {reminderMsg && <Text style={styles.helper}>{reminderMsg}</Text>}
               <Pressable
                 onPress={() => router.push('/legal')}
                 style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}

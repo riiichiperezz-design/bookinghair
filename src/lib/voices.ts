@@ -170,7 +170,8 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
     .from('voices')
     .select('id, sender_id, audio_path, duration_ms, country, created_at, claimed_at')
     .eq('claimed_by', user.id)
-    .order('claimed_at', { ascending: false });
+    .order('claimed_at', { ascending: false })
+    .limit(100);
   if (error) throw error;
 
   const rows = data ?? [];
@@ -235,7 +236,8 @@ export async function fetchSentVoices(): Promise<SentVoice[]> {
     .from('voices')
     .select('id, audio_path, duration_ms, created_at, claimed_by')
     .eq('sender_id', user.id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(100);
   if (error) throw error;
 
   const rows = data ?? [];

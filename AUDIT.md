@@ -6,6 +6,21 @@ lo que **falla/arriesga** y la **ruta para publicarla como app real**.
 
 ---
 
+## 0. Resuelto desde la primera auditoría ✅
+
+- 🔒 **Seguridad del audio**: bucket privado + URLs firmadas + RLS estricto (0003).
+- 🛡️ **Moderación**: reportar/bloquear + filtrado en `claim_voice()` (0004).
+- 🔔 **Push reales**: triggers `pg_net` → Expo Push (0005).
+- 🧑 **Identidad recuperable**: vincular email a la cuenta anónima.
+- 🗑️ **Borrado de datos** (GDPR) desde el perfil.
+- 📄 **Privacidad y términos** (pantalla `/legal` + consentimiento).
+- 🌍 **País automático** por región del dispositivo.
+
+Pendiente principal: telemetría (Sentry/analítica), realtime, tests, y los
+trámites de tienda (capturas, política publicada en una URL, cuentas de pago).
+
+---
+
 ## 1. Lo que ya funciona ✅
 
 - Onboarding (`@usuario` + país), home, grabar/enviar, recibir (1‑a‑1), reaccionar.
