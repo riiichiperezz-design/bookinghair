@@ -9,16 +9,13 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#140805",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.ecco.app"
     },
     "android": {
       "package": "com.ecco.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#140805",
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -44,9 +41,11 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#140805",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 140,
           "android": {
             "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76,
+            "imageWidth": 140,
             "backgroundColor": "#140805"
           }
         }
