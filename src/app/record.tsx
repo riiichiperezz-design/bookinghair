@@ -3,12 +3,14 @@ import {
   RecordingPresets,
   setAudioModeAsync,
   useAudioPlayer,
+  useAudioPlayerStatus,
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AudioPlayerCard } from '@/components/AudioPlayerCard';
@@ -16,6 +18,7 @@ import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, InboxIcon } from '@/components/icons';
 import { RecordButton } from '@/components/RecordButton';
+import { haptics } from '@/lib/haptics';
 import { uploadVoice } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
@@ -87,11 +90,12 @@ function Recorder() {
 
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [recordedMs, setRecordedMs] = useState(0);
-  const [previewPlaying, setPreviewPlaying] = useState(false);
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
 
   const player = useAudioPlayer(recordedUri ?? undefined);
+  const playerStatus = useAudioPlayerStatus(player);
+  const previewPlaying = playerStatus.playing;
 
   useEffect(() => {
     let active = true;
@@ -112,12 +116,13 @@ function Recorder() {
 
   const startRecording = async () => {
     setRecordedUri(null);
-    setPreviewPlaying(false);
+    haptics.impact();
     await recorder.prepareToRecordAsync();
     recorder.record();
   };
 
   const stopRecording = async () => {
+    haptics.impact();
     setRecordedMs(recorderState.durationMillis ?? 0);
     await recorder.stop();
     setRecordedUri(recorder.uri ?? null);
@@ -134,17 +139,14 @@ function Recorder() {
   const togglePreview = () => {
     if (previewPlaying) {
       player.pause();
-      setPreviewPlaying(false);
     } else {
       player.seekTo(0);
       player.play();
-      setPreviewPlaying(true);
     }
   };
 
   const reRecord = () => {
     setRecordedUri(null);
-    setPreviewPlaying(false);
     setRecordedMs(0);
   };
 
@@ -153,6 +155,7 @@ function Recorder() {
     setSending(true);
     try {
       await uploadVoice(recordedUri, recordedMs);
+      haptics.success();
       setSent(true);
     } catch (e) {
       Alert.alert(
@@ -167,7 +170,9 @@ function Recorder() {
   if (sent) {
     return (
       <View style={styles.center}>
-        <Text style={styles.bigEmoji}>🔥</Text>
+        <Animated.Text style={styles.bigEmoji} entering={ZoomIn.duration(420)}>
+          🔥
+        </Animated.Text>
         <Text style={styles.title}>Tu voz va de camino</Text>
         <Text style={styles.subtitle}>
           Llegará sin tu nombre. Que la descubran.

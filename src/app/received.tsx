@@ -1,10 +1,11 @@
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -15,6 +16,7 @@ import { Avatar } from '@/components/Avatar';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, PauseIcon, PlayIcon } from '@/components/icons';
 import { flagFor } from '@/constants/countries';
+import { haptics } from '@/lib/haptics';
 import {
   fetchReceivedVoices,
   fetchSentVoices,
@@ -106,7 +108,7 @@ function Lists({ tab }: { tab: Tab }) {
   const [received, setReceived] = useState<Voice[] | null>(null);
   const [sent, setSent] = useState<SentVoice[] | null>(null);
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const currentUrl = useMemo(() => {
     const inReceived = received?.find((v) => v.id === currentId)?.audioUrl;
@@ -115,36 +117,52 @@ function Lists({ tab }: { tab: Tab }) {
   }, [received, sent, currentId]);
 
   const player = useAudioPlayer(currentUrl ?? undefined);
+  const playerStatus = useAudioPlayerStatus(player);
+  const playing = playerStatus.playing;
+
+  const load = async () => {
+    const [r, s] = await Promise.all([
+      fetchReceivedVoices().catch(() => []),
+      fetchSentVoices().catch(() => []),
+    ]);
+    setReceived(r);
+    setSent(s);
+  };
 
   useEffect(() => {
     let active = true;
-    fetchReceivedVoices()
-      .then((v) => active && setReceived(v))
-      .catch(() => active && setReceived([]));
-    fetchSentVoices()
-      .then((v) => active && setSent(v))
-      .catch(() => active && setSent([]));
+    load().finally(() => {
+      if (!active) {
+        // noop: evita warning si se desmonta
+      }
+    });
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     if (!currentId) return;
     player.seekTo(0);
     player.play();
-    setPlaying(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId]);
 
   const toggle = (id: string) => {
+    haptics.tap();
     if (currentId === id) {
       if (playing) {
         player.pause();
-        setPlaying(false);
       } else {
+        player.seekTo(0);
         player.play();
-        setPlaying(true);
       }
     } else {
       setCurrentId(id);
@@ -185,6 +203,14 @@ function Lists({ tab }: { tab: Tab }) {
         keyExtractor={(v) => v.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.ember}
+            colors={[colors.ember]}
+          />
+        }
         renderItem={({ item }) => (
           <View style={styles.item}>
             <Avatar name={item.username ?? '?'} size={44} />
@@ -214,6 +240,14 @@ function Lists({ tab }: { tab: Tab }) {
       keyExtractor={(v) => v.id}
       contentContainerStyle={styles.list}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.ember}
+          colors={[colors.ember]}
+        />
+      }
       renderItem={({ item }) => (
         <View style={styles.item}>
           <View style={styles.itemInfo}>

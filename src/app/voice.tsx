@@ -1,4 +1,4 @@
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AudioPlayerCard } from '@/components/AudioPlayerCard';
@@ -18,6 +19,7 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, LockIcon, MicIcon } from '@/components/icons';
 import { ReactionsRow } from '@/components/ReactionsRow';
 import { flagFor } from '@/constants/countries';
+import { haptics } from '@/lib/haptics';
 import { addReaction, claimVoice, getCredits, type Voice } from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -58,9 +60,10 @@ function VoiceInner() {
   const router = useRouter();
   const [status, setStatus] = useState<Status>('loading');
   const [voice, setVoice] = useState<Voice | null>(null);
-  const [playing, setPlaying] = useState(false);
 
   const player = useAudioPlayer(voice?.audioUrl ?? undefined);
+  const playerStatus = useAudioPlayerStatus(player);
+  const playing = playerStatus.playing;
 
   useEffect(() => {
     let active = true;
@@ -77,6 +80,7 @@ function VoiceInner() {
         if (v) {
           setVoice(v);
           setStatus('ready');
+          haptics.impact();
         } else {
           setStatus('empty');
         }
@@ -92,11 +96,9 @@ function VoiceInner() {
   const togglePlay = () => {
     if (playing) {
       player.pause();
-      setPlaying(false);
     } else {
-      player.seekTo(0);
+      if (playerStatus.didJustFinish) player.seekTo(0);
       player.play();
-      setPlaying(true);
     }
   };
 
@@ -152,7 +154,7 @@ function VoiceInner() {
   const username = voice?.username ?? null;
   return (
     <View style={styles.flexBody}>
-      <View style={styles.reveal}>
+      <Animated.View style={styles.reveal} entering={FadeInDown.duration(450)}>
         <Avatar name={username ?? '?'} size={92} />
         <Text style={styles.kicker}>una voz acaba de llegar</Text>
         <Text style={styles.title}>
@@ -169,17 +171,23 @@ function VoiceInner() {
             <Text style={styles.countryText}>anónima · sin lugar</Text>
           </View>
         )}
-      </View>
+      </Animated.View>
 
-      <View style={styles.playerWrap}>
+      <Animated.View
+        style={styles.playerWrap}
+        entering={FadeInDown.duration(450).delay(120)}
+      >
         <AudioPlayerCard
           duration={formatMs(voice?.duration_ms ?? 0)}
           playing={playing}
           onTogglePlay={togglePlay}
         />
-      </View>
+      </Animated.View>
 
-      <View style={styles.footer}>
+      <Animated.View
+        style={styles.footer}
+        entering={FadeInDown.duration(450).delay(220)}
+      >
         <ReactionsRow
           onReact={(emoji) => {
             if (voice) addReaction(voice.id, emoji).catch(() => {});
@@ -203,7 +211,7 @@ function VoiceInner() {
             <Text style={styles.premiumText}>premium</Text>
           </View>
         </Pressable>
-      </View>
+      </Animated.View>
     </View>
   );
 }

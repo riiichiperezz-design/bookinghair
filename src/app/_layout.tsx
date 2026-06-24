@@ -55,8 +55,13 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.bgBottom },
+          animation: 'slide_from_right',
         }}
-      />
+      >
+        <Stack.Screen name="record" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="setup" options={{ animation: 'fade' }} />
+        <Stack.Screen name="intro" options={{ animation: 'fade' }} />
+      </Stack>
       <StatusBar style="light" />
     </SafeAreaProvider>
   );

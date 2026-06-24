@@ -1,4 +1,14 @@
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { PauseIcon, PlayIcon } from '@/components/icons';
 import { colors, fonts, radius, spacing } from '@/theme';
@@ -19,7 +29,51 @@ type Props = {
   onTogglePlay: () => void;
 };
 
-/** Tarjeta del reproductor de voz: play + onda estática + duración. */
+function Bar({
+  height,
+  color,
+  index,
+  playing,
+}: {
+  height: number;
+  color: string;
+  index: number;
+  playing: boolean;
+}) {
+  const scale = useSharedValue(1);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    if (playing && !reduced) {
+      scale.value = withDelay(
+        (index % 6) * 70,
+        withRepeat(
+          withTiming(0.4, { duration: 420, easing: Easing.inOut(Easing.ease) }),
+          -1,
+          true
+        )
+      );
+    } else {
+      scale.value = withTiming(1, { duration: 180 });
+    }
+  }, [playing, reduced, index, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: scale.value }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.bar,
+        { height, backgroundColor: color },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
+/** Tarjeta del reproductor de voz: play + onda (animada al sonar) + duración. */
 export function AudioPlayerCard({ duration, playing, onTogglePlay }: Props) {
   return (
     <View style={styles.card}>
@@ -38,12 +92,12 @@ export function AudioPlayerCard({ duration, playing, onTogglePlay }: Props) {
 
       <View style={styles.wave}>
         {BARS.map((h, i) => (
-          <View
+          <Bar
             key={i}
-            style={[
-              styles.bar,
-              { height: h, backgroundColor: BAR_COLORS[i % BAR_COLORS.length] },
-            ]}
+            index={i}
+            height={h}
+            color={BAR_COLORS[i % BAR_COLORS.length]}
+            playing={playing}
           />
         ))}
       </View>

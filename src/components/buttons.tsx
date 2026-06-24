@@ -1,11 +1,12 @@
 import {
-  Pressable,
   StyleSheet,
   Text,
   View,
   type GestureResponderEvent,
 } from 'react-native';
 
+import { PressableScale } from '@/components/PressableScale';
+import { haptics } from '@/lib/haptics';
 import { colors, fonts, radius } from '@/theme';
 
 type PrimaryButtonProps = {
@@ -24,14 +25,13 @@ export function PrimaryButton({
   disabled,
 }: PrimaryButtonProps) {
   return (
-    <Pressable
-      onPress={onPress}
+    <PressableScale
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.primary,
-        pressed && styles.pressed,
-        disabled && styles.disabled,
-      ]}
+      onPress={(e) => {
+        haptics.tap();
+        onPress?.(e);
+      }}
+      style={[styles.primary, disabled ? styles.disabled : undefined]}
     >
       {icon != null && (
         <View>
@@ -44,7 +44,7 @@ export function PrimaryButton({
         </View>
       )}
       <Text style={styles.primaryLabel}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -55,12 +55,15 @@ type GhostButtonProps = {
 
 export function GhostButton({ label, onPress }: GhostButtonProps) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
+    <PressableScale
+      onPress={(e) => {
+        haptics.tap();
+        onPress?.(e);
+      }}
+      style={styles.ghost}
     >
       <Text style={styles.ghostLabel}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -93,9 +96,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontFamily: fonts.bodyMedium,
     fontSize: 14,
-  },
-  pressed: {
-    opacity: 0.8,
   },
   disabled: {
     opacity: 0.5,
