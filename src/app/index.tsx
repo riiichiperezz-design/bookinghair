@@ -14,6 +14,7 @@ import { Waveform } from '@/components/Waveform';
 import { getNewActivityCount } from '@/lib/activity';
 import { haptics } from '@/lib/haptics';
 import { getMyProfile } from '@/lib/profile';
+import { registerPushToken } from '@/lib/push';
 import { touchStreak } from '@/lib/streak';
 import { getCredits, receivedCount, waitingCount } from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
@@ -42,6 +43,7 @@ export default function Home() {
             return;
           }
           setUsername(profile.username);
+          registerPushToken().catch(() => {});
           const [n, r, s, a, w] = await Promise.all([
             getCredits(),
             receivedCount(),

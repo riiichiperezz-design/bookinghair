@@ -101,6 +101,20 @@ export function BellIcon({ size = 22, color = colors.textPrimary }: IconProps) {
   );
 }
 
+export function FlagIcon({ size = 16, color = colors.textMuted }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M5 21V4M5 4c3-2 7 2 10 0v9c-3 2-7-2-10 0"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function ShareIcon({ size = 20, color = colors.textPrimary }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

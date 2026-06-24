@@ -7,6 +7,28 @@ import { ensureSession } from './session';
 import { supabase } from './supabase';
 
 const BUCKET = 'voices';
+const SIGNED_TTL = 60 * 60; // 1 h
+
+/** URL firmada para reproducir un audio del bucket privado. */
+async function signedUrl(path: string): Promise<string> {
+  const { data } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, SIGNED_TTL);
+  return data?.signedUrl ?? '';
+}
+
+/** URLs firmadas en lote (mantiene el orden de `paths`). */
+async function signedUrls(paths: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (paths.length === 0) return out;
+  const { data } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrls(paths, SIGNED_TTL);
+  for (const item of data ?? []) {
+    if (item.path && item.signedUrl) out.set(item.path, item.signedUrl);
+  }
+  return out;
+}
 
 const AUDIO_TYPES: Record<string, string> = {
   webm: 'audio/webm',
@@ -27,6 +49,7 @@ function contentTypeFromUri(uri: string): string {
 
 export type Voice = {
   id: string;
+  senderId: string;
   audio_path: string;
   duration_ms: number;
   country: string | null;
@@ -128,15 +151,15 @@ export async function claimVoice(): Promise<Voice | null> {
     .eq('id', row.sender_id)
     .maybeSingle();
 
-  const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(row.audio_path);
   return {
     id: row.id,
+    senderId: row.sender_id,
     audio_path: row.audio_path,
     duration_ms: row.duration_ms,
     created_at: row.created_at,
     country: row.country ?? sender?.country ?? null,
     username: sender?.username ?? null,
-    audioUrl: pub.publicUrl,
+    audioUrl: await signedUrl(row.audio_path),
   };
 }
 
@@ -159,20 +182,19 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
     .select('id, username, country')
     .in('id', senderIds);
   const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
+  const urls = await signedUrls(rows.map((r) => r.audio_path));
 
   return rows.map((r) => {
     const prof = profMap.get(r.sender_id);
-    const { data: pub } = supabase.storage
-      .from(BUCKET)
-      .getPublicUrl(r.audio_path);
     return {
       id: r.id,
+      senderId: r.sender_id,
       audio_path: r.audio_path,
       duration_ms: r.duration_ms,
       created_at: r.created_at,
       country: r.country ?? prof?.country ?? null,
       username: prof?.username ?? null,
-      audioUrl: pub.publicUrl,
+      audioUrl: urls.get(r.audio_path) ?? '',
     };
   });
 }
@@ -180,11 +202,8 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
 /** Voces sin reclamar dando vueltas por el mundo ahora mismo (señal "viva"). */
 export async function waitingCount(): Promise<number> {
   await ensureSession();
-  const { count } = await supabase
-    .from('voices')
-    .select('id', { count: 'exact', head: true })
-    .is('claimed_by', null);
-  return count ?? 0;
+  const { data } = await supabase.rpc('waiting_count');
+  return (data as number | null) ?? 0;
 }
 
 /** Número de voces recibidas (reclamadas) por el usuario. */
@@ -236,10 +255,9 @@ export async function fetchSentVoices(): Promise<SentVoice[]> {
     byVoice.set(r.voice_id, m);
   }
 
+  const urls = await signedUrls(rows.map((r) => r.audio_path));
+
   return rows.map((r) => {
-    const { data: pub } = supabase.storage
-      .from(BUCKET)
-      .getPublicUrl(r.audio_path);
     const counts = byVoice.get(r.id);
     const reactions: ReactionCount[] = counts
       ? [...counts.entries()]
@@ -251,7 +269,7 @@ export async function fetchSentVoices(): Promise<SentVoice[]> {
       audio_path: r.audio_path,
       duration_ms: r.duration_ms,
       created_at: r.created_at,
-      audioUrl: pub.publicUrl,
+      audioUrl: urls.get(r.audio_path) ?? '',
       claimed: r.claimed_by != null,
       reactions,
     };

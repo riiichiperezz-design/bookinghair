@@ -16,10 +16,11 @@ import { AudioPlayerCard } from '@/components/AudioPlayerCard';
 import { Avatar } from '@/components/Avatar';
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
-import { ArrowLeftIcon, LockIcon, MicIcon } from '@/components/icons';
+import { ArrowLeftIcon, FlagIcon, LockIcon, MicIcon } from '@/components/icons';
 import { ReactionsRow } from '@/components/ReactionsRow';
 import { flagFor } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
+import { blockSender, reportVoice } from '@/lib/moderation';
 import { inviteFriends } from '@/lib/share';
 import { addReaction, claimVoice, getCredits, type Voice } from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
@@ -101,6 +102,20 @@ function VoiceInner() {
       if (playerStatus.didJustFinish) player.seekTo(0);
       player.play();
     }
+  };
+
+  const handleReport = async () => {
+    if (!voice) return;
+    haptics.tap();
+    await reportVoice(voice.id).catch(() => {});
+    router.replace('/');
+  };
+
+  const handleBlock = async () => {
+    if (!voice) return;
+    haptics.tap();
+    await blockSender(voice.senderId).catch(() => {});
+    router.replace('/');
   };
 
   if (status === 'loading') {
@@ -219,6 +234,29 @@ function VoiceInner() {
             <Text style={styles.premiumText}>premium</Text>
           </View>
         </Pressable>
+
+        <View style={styles.modRow}>
+          <Pressable
+            onPress={handleReport}
+            hitSlop={8}
+            style={styles.modBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Reportar voz"
+          >
+            <FlagIcon size={13} color={colors.textMuted} />
+            <Text style={styles.modText}>reportar</Text>
+          </Pressable>
+          <Text style={styles.modSep}>·</Text>
+          <Pressable
+            onPress={handleBlock}
+            hitSlop={8}
+            style={styles.modBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Bloquear a esta persona"
+          >
+            <Text style={styles.modText}>bloquear</Text>
+          </Pressable>
+        </View>
       </Animated.View>
     </View>
   );
@@ -332,6 +370,27 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: colors.textOnEmber,
     textTransform: 'uppercase',
+  },
+  modRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  modBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  modText: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  modSep: {
+    color: colors.textMuted,
+    fontSize: 12,
   },
   pressed: {
     opacity: 0.8,
