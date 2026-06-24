@@ -31,3 +31,25 @@ que está en tu `.env`. No hace falta nada más.
 > Nota: el bucket `voices` es **público** (las URLs son uuids no adivinables) para
 > simplificar la reproducción en el MVP. Cuando quieras, lo pasamos a privado con
 > URLs firmadas.
+
+## 4. (Opcional) Cargar voces de prueba
+
+Para probar el flujo de recibir/reaccionar sin necesitar dos cuentas, hay un
+script que crea unos usuarios demo y sube una voz de cada uno al pool.
+
+1. Copia tu **service_role key**: Supabase → **Project Settings → API** →
+   `service_role` (es **secreta**, no la subas a git ni la compartas).
+2. En la carpeta del proyecto:
+
+   **Windows (PowerShell):**
+   ```powershell
+   $env:SUPABASE_SERVICE_ROLE_KEY="pega_aqui_la_service_role"
+   npm run seed
+   ```
+   **Mac/Linux:**
+   ```bash
+   SUPABASE_SERVICE_ROLE_KEY="pega_aqui_la_service_role" npm run seed
+   ```
+
+Luego, en la app: **manda una voz** (para tener crédito) y pulsa **"Abrir mis
+voces"** → recibirás una de los usuarios demo y podrás reaccionar.

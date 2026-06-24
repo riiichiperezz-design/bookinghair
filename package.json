@@ -50,7 +50,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "seed": "node scripts/seed.mjs",
+    "gen-icons": "node scripts/gen-icons.mjs"
   },
   "private": true
 }
