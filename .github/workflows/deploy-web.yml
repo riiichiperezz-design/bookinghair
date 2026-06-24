@@ -32,6 +32,12 @@ jobs:
 
       - run: npm ci
 
+      # Activa GitHub Pages (source = GitHub Actions) sin tocar ajustes a mano.
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       # GitHub Pages sirve en /<repo>/, así que fijamos esa baseUrl solo en CI.
       - name: Set web base URL
         run: |
