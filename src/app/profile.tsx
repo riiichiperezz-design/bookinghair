@@ -13,10 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/buttons';
+import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon } from '@/components/icons';
 import { COUNTRIES } from '@/constants/countries';
+import { deleteMyData, getAccountEmail, linkAccount } from '@/lib/account';
 import { getMyProfile, saveProfile, UsernameTakenError } from '@/lib/profile';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -30,13 +31,21 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [linkEmail, setLinkEmail] = useState('');
+  const [linkPassword, setLinkPassword] = useState('');
+  const [linking, setLinking] = useState(false);
+  const [linkErr, setLinkErr] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   useEffect(() => {
     let active = true;
-    getMyProfile()
-      .then((p) => {
+    Promise.all([getMyProfile(), getAccountEmail()])
+      .then(([p, email]) => {
         if (!active) return;
         setUsername(p?.username ?? '');
         setCountry(p?.country ?? null);
+        setAccountEmail(email);
         setLoaded(true);
       })
       .catch(() => active && setLoaded(true));
@@ -44,6 +53,33 @@ export default function ProfileScreen() {
       active = false;
     };
   }, []);
+
+  const canLink =
+    /.+@.+\..+/.test(linkEmail.trim()) && linkPassword.length >= 6;
+
+  const linkNow = async () => {
+    if (!canLink || linking) return;
+    setLinking(true);
+    setLinkErr(null);
+    try {
+      await linkAccount(linkEmail.trim(), linkPassword);
+      setAccountEmail(linkEmail.trim());
+      setLinkPassword('');
+    } catch (e) {
+      setLinkErr(e instanceof Error ? e.message : 'No se pudo vincular.');
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    await deleteMyData().catch(() => {});
+    router.replace('/');
+  };
 
   const valid = USERNAME_RE.test(username);
 
@@ -144,6 +180,67 @@ export default function ProfileScreen() {
                   );
                 })}
               </View>
+
+              {/* Cuenta */}
+              <Text style={styles.sectionLabel}>tu cuenta</Text>
+              {accountEmail ? (
+                <Text style={styles.accountInfo}>
+                  Guardada como {accountEmail} ✓
+                </Text>
+              ) : (
+                <View>
+                  <Text style={styles.accountInfo}>
+                    Solo en este dispositivo. Vincula un email para no perder tu
+                    @usuario, racha y voces si reinstalas.
+                  </Text>
+                  <View style={[styles.inputRow, styles.mt]}>
+                    <TextInput
+                      value={linkEmail}
+                      onChangeText={setLinkEmail}
+                      placeholder="email"
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      style={styles.input}
+                    />
+                  </View>
+                  <View style={[styles.inputRow, styles.mt]}>
+                    <TextInput
+                      value={linkPassword}
+                      onChangeText={setLinkPassword}
+                      placeholder="contraseña (mín. 6)"
+                      placeholderTextColor={colors.textMuted}
+                      secureTextEntry
+                      style={styles.input}
+                    />
+                  </View>
+                  {linkErr && <Text style={styles.helper}>{linkErr}</Text>}
+                  <View style={styles.mt}>
+                    <GhostButton
+                      label={linking ? 'Guardando…' : 'Guardar mi cuenta'}
+                      onPress={linkNow}
+                    />
+                  </View>
+                </View>
+              )}
+
+              {/* Más */}
+              <Text style={styles.sectionLabel}>más</Text>
+              <Pressable
+                onPress={() => router.push('/legal')}
+                style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+              >
+                <Text style={styles.linkText}>Privacidad y términos</Text>
+              </Pressable>
+              <Pressable
+                onPress={onDelete}
+                style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+              >
+                <Text style={styles.dangerText}>
+                  {confirmDelete ? 'Toca otra vez para borrar' : 'Borrar mis datos'}
+                </Text>
+              </Pressable>
             </ScrollView>
 
             <View style={styles.footer}>
@@ -244,6 +341,26 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: { color: colors.textPrimary },
   pressed: { opacity: 0.7 },
+  mt: { marginTop: spacing.sm },
+  accountInfo: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.textSecondary,
+  },
+  linkRow: {
+    paddingVertical: spacing.md,
+  },
+  linkText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  dangerText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+    color: '#d9603f',
+  },
   footer: {
     paddingBottom: spacing.xl,
     paddingTop: spacing.sm,

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
-import { COUNTRIES } from '@/constants/countries';
+import { COUNTRIES, detectCountry } from '@/constants/countries';
 import { saveProfile, UsernameTakenError } from '@/lib/profile';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -26,6 +26,12 @@ export default function SetupScreen() {
   const [country, setCountry] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // País sugerido por la región del dispositivo.
+  useEffect(() => {
+    const d = detectCountry();
+    if (d) setCountry(d);
+  }, []);
 
   const valid = USERNAME_RE.test(username);
 
@@ -127,6 +133,13 @@ export default function SetupScreen() {
               onPress={submit}
               disabled={!valid || saving}
             />
+            <Text style={styles.consent}>
+              Al entrar aceptas la{' '}
+              <Text style={styles.consentLink} onPress={() => router.push('/legal')}>
+                privacidad y términos
+              </Text>
+              .
+            </Text>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -150,6 +163,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   wordmarkDot: { color: colors.ember },
+  consent: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 11,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  consentLink: {
+    color: colors.textSecondary,
+    textDecorationLine: 'underline',
+  },
   title: {
     fontFamily: fonts.display,
     fontSize: 32,
