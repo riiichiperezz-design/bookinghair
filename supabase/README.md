@@ -25,8 +25,39 @@ uno, pulsa **Run**, y luego el siguiente):
    reportar/bloquear y filtrado en `claim_voice()`.
 5. [`migrations/0005_push.sql`](./migrations/0005_push.sql) — notificaciones
    push reales vía `pg_net` (solo afectan a builds nativos).
+6. [`migrations/0006_moderacion_previa.sql`](./migrations/0006_moderacion_previa.sql)
+   — **moderación previa**: estado de los audios, cola de revisión, incidencias,
+   y `claim_voice()` que solo entrega audios **aprobados**.
 
 Ejecuta en orden las que aún no hayas pasado.
+
+## 5. Moderación previa (Edge Function)
+
+Ningún audio se entrega sin pasar por moderación. La función vive en
+[`functions/moderar-audio`](./functions/moderar-audio).
+
+1. Instala la CLI: `npm i -g supabase` y entra: `supabase login`.
+2. Vincula tu proyecto: `supabase link --project-ref wgrziufchibgwowfhyhp`.
+3. Despliega: `supabase functions deploy moderar-audio`.
+
+Por defecto usa el **ModeradorStub** (aprueba; solo desarrollo). Para activar el
+moderador real, implementa `moderador-api.ts` y pon el secreto:
+
+```bash
+supabase secrets set MODERADOR_IMPL=api \
+  MODERACION_TRANSCRIPCION_API_KEY=... \
+  MODERACION_CLASIFICADOR_API_KEY=...
+```
+
+### Hacerte administrador (para el panel de revisión)
+
+En el SQL Editor, con tu user id (lo ves en Authentication → Users):
+
+```sql
+update public.profiles set rol = 'admin' where id = 'TU_USER_ID';
+```
+
+Luego, en la app, en tu perfil aparecerá **"Panel de moderación"**.
 
 ## 3. Listo
 

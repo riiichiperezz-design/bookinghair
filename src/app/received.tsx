@@ -32,6 +32,18 @@ function formatMs(ms: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function sentStatusLabel(v: SentVoice): string {
+  if (v.estado === 'aprobado') return v.claimed ? 'escuchada' : 'esperando';
+  if (v.estado === 'rechazado') return 'no aprobada';
+  return 'en revisión';
+}
+
+function sentDotColor(v: SentVoice): string {
+  if (v.estado === 'rechazado') return '#d9603f';
+  if (v.estado !== 'aprobado') return colors.textMuted;
+  return v.claimed ? colors.emberBright : colors.textMuted;
+}
+
 type Tab = 'received' | 'sent';
 
 export default function ReceivedScreen() {
@@ -256,16 +268,11 @@ function Lists({ tab }: { tab: Tab }) {
             </Text>
             <View style={styles.sentMetaRow}>
               <Text
-                style={[
-                  styles.statusDot,
-                  { color: item.claimed ? colors.emberBright : colors.textMuted },
-                ]}
+                style={[styles.statusDot, { color: sentDotColor(item) }]}
               >
                 ●
               </Text>
-              <Text style={styles.itemMeta}>
-                {item.claimed ? 'escuchada' : 'esperando'}
-              </Text>
+              <Text style={styles.itemMeta}>{sentStatusLabel(item)}</Text>
               {item.reactions.length > 0 && (
                 <View style={styles.reactionChips}>
                   {item.reactions.map((r) => (

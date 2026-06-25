@@ -118,6 +118,9 @@ async function run() {
       audio_path: path,
       duration_ms: d.secs * 1000,
       country: d.country,
+      // Datos demo de confianza: entran ya aprobados para poder repartirse.
+      estado_moderacion: 'aprobado',
+      moderado_en: new Date().toISOString(),
     });
     if (ins.error) throw ins.error;
 

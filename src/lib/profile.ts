@@ -5,6 +5,7 @@ export type Profile = {
   id: string;
   username: string | null;
   country: string | null;
+  rol: string;
 };
 
 /** Perfil del usuario actual, o null si aún no lo ha creado. */
@@ -12,7 +13,7 @@ export async function getMyProfile(): Promise<Profile | null> {
   const user = await ensureSession();
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, country')
+    .select('id, username, country, rol')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;

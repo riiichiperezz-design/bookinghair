@@ -39,6 +39,7 @@ export default function ProfileScreen() {
   const [linkErr, setLinkErr] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [reminderMsg, setReminderMsg] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -47,6 +48,7 @@ export default function ProfileScreen() {
         if (!active) return;
         setUsername(p?.username ?? '');
         setCountry(p?.country ?? null);
+        setIsAdmin(p?.rol === 'admin');
         setAccountEmail(email);
         setLoaded(true);
       })
@@ -243,6 +245,17 @@ export default function ProfileScreen() {
                 <Text style={styles.linkText}>Activar recordatorio diario 🔥</Text>
               </Pressable>
               {reminderMsg && <Text style={styles.helper}>{reminderMsg}</Text>}
+              {isAdmin && (
+                <Pressable
+                  onPress={() => router.push('/admin')}
+                  style={({ pressed }) => [
+                    styles.linkRow,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={styles.linkText}>Panel de moderación 🛡️</Text>
+                </Pressable>
+              )}
               <Pressable
                 onPress={() => router.push('/legal')}
                 style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}

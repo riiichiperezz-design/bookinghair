@@ -185,9 +185,10 @@ function Recorder() {
         <Animated.Text style={styles.bigEmoji} entering={ZoomIn.duration(420)}>
           🔥
         </Animated.Text>
-        <Text style={styles.title}>Tu voz va de camino</Text>
+        <Text style={styles.title}>Va de camino. Un segundo y sale.</Text>
         <Text style={styles.subtitle}>
-          Llegará sin tu nombre a un desconocido del mundo. Que la descubran.
+          Revisamos rápido que todo esté bien y la soltamos al mundo, sin tu
+          nombre. Que la descubran.
         </Text>
         <View style={styles.sentActions}>
           <PrimaryButton

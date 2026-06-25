@@ -94,13 +94,24 @@ export async function uploadVoice(uri: string, durationMs: number) {
     .upload(path, body, { contentType, upsert: false });
   if (upErr) throw upErr;
 
-  const { error: insErr } = await supabase.from('voices').insert({
-    sender_id: user.id,
-    audio_path: path,
-    duration_ms: Math.round(durationMs),
-    country: profile?.country ?? null,
-  });
+  // La voz nace 'pendiente' (default de la columna estado_moderacion).
+  const { data: inserted, error: insErr } = await supabase
+    .from('voices')
+    .insert({
+      sender_id: user.id,
+      audio_path: path,
+      duration_ms: Math.round(durationMs),
+      country: profile?.country ?? null,
+    })
+    .select('id')
+    .single();
   if (insErr) throw insErr;
+
+  // Dispara la MODERACIÓN PREVIA (server-side). No bloquea el envío: la voz
+  // queda 'pendiente' hasta que la Edge Function la apruebe/rechace.
+  supabase.functions
+    .invoke('moderar-audio', { body: { audioId: inserted.id } })
+    .catch(() => {});
 }
 
 /**
@@ -226,6 +237,7 @@ export type SentVoice = {
   created_at: string;
   audioUrl: string;
   claimed: boolean;
+  estado: string; // estado_moderacion
   reactions: ReactionCount[];
 };
 
@@ -234,7 +246,7 @@ export async function fetchSentVoices(): Promise<SentVoice[]> {
   const user = await ensureSession();
   const { data, error } = await supabase
     .from('voices')
-    .select('id, audio_path, duration_ms, created_at, claimed_by')
+    .select('id, audio_path, duration_ms, created_at, claimed_by, estado_moderacion')
     .eq('sender_id', user.id)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -273,6 +285,7 @@ export async function fetchSentVoices(): Promise<SentVoice[]> {
       created_at: r.created_at,
       audioUrl: urls.get(r.audio_path) ?? '',
       claimed: r.claimed_by != null,
+      estado: r.estado_moderacion as string,
       reactions,
     };
   });

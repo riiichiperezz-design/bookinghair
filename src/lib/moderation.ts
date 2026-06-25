@@ -1,14 +1,14 @@
 import { ensureSession } from './session';
 import { supabase } from './supabase';
 
-/** Reporta una voz (no volverás a recibirla; con 3+ reportes se oculta a todos). */
+/** Reporta una voz (incidencia). No volverás a recibirla; con 3+ se oculta a todos. */
 export async function reportVoice(voiceId: string, reason?: string) {
   const user = await ensureSession();
   await supabase
-    .from('reports')
+    .from('incidencias')
     .upsert(
-      { voice_id: voiceId, reporter_id: user.id, reason: reason ?? null },
-      { onConflict: 'voice_id,reporter_id' }
+      { audio_id: voiceId, reportante_id: user.id, motivo: reason ?? null },
+      { onConflict: 'audio_id,reportante_id' }
     );
 }
 
