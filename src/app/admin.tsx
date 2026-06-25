@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, PlayIcon } from '@/components/icons';
+import { etiquetaCategoria } from '@/constants/moderacion';
 import {
   adminSignedUrl,
   fetchCola,
@@ -143,7 +144,7 @@ function AdminInner() {
       {cola.map((c) => (
         <Item
           key={c.audio_id}
-          motivo={c.motivo ?? 'sin clasificar'}
+          motivo={etiquetaCategoria(c.motivo)}
           transcripcion={c.transcripcion}
           estado={c.estado_moderacion}
           onPlay={() => play(c.audio_path)}

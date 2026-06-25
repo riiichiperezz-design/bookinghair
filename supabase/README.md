@@ -36,6 +36,15 @@ Ejecuta en orden las que aún no hayas pasado.
 Ningún audio se entrega sin pasar por moderación. La función vive en
 [`functions/moderar-audio`](./functions/moderar-audio).
 
+**Opción A — automática (recomendada):** hay un workflow
+(`.github/workflows/deploy-functions.yml`) que despliega la función en cada push.
+Solo tienes que añadir **una vez** el secreto del repositorio:
+
+- Genera un token en https://supabase.com/dashboard/account/tokens
+- Repo → **Settings → Secrets and variables → Actions → New repository secret**
+  → nombre `SUPABASE_ACCESS_TOKEN`, valor = el token.
+
+**Opción B — manual con la CLI:**
 1. Instala la CLI: `npm i -g supabase` y entra: `supabase login`.
 2. Vincula tu proyecto: `supabase link --project-ref wgrziufchibgwowfhyhp`.
 3. Despliega: `supabase functions deploy moderar-audio`.
