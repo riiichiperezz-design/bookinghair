@@ -116,16 +116,33 @@ export type ResultadoEvaluacion = {
 
 /**
  * Dada la lista de categorías detectadas, aplica la acción MÁS SEVERA.
- * Sin categorías → aprobado.
+ * Seguridad: solo se aprueba con una lista VACÍA de categorías conocidas.
+ * Cualquier entrada inesperada (no-array, nulos o categorías desconocidas)
+ * NUNCA aprueba: cae a revisión humana.
  */
 export function evaluarCategorias(
   detectadas: CategoriaModeracion[]
 ): ResultadoEvaluacion {
+  // Entrada inesperada (no es un array) → nunca aprobar.
+  if (!Array.isArray(detectadas)) {
+    return { decision: 'revision_humana', categoria: null, conservarEvidencia: false };
+  }
+  // Sin categorías detectadas → contenido limpio.
   if (detectadas.length === 0) {
     return { decision: 'aprobado', categoria: null, conservarEvidencia: false };
   }
-  let peor = detectadas[0];
-  for (const c of detectadas) {
+  // Nos quedamos solo con las categorías CONOCIDAS (descarta nulos/strings raros).
+  const validas = detectadas.filter(
+    (c): c is CategoriaModeracion =>
+      typeof c === 'string' &&
+      Object.prototype.hasOwnProperty.call(POLITICA_MODERACION, c)
+  );
+  // Si todo eran categorías desconocidas/nulas → no aprobar a ciegas.
+  if (validas.length === 0) {
+    return { decision: 'revision_humana', categoria: null, conservarEvidencia: false };
+  }
+  let peor = validas[0];
+  for (const c of validas) {
     const [a1, a2] = severidad(c);
     const [b1, b2] = severidad(peor);
     if (a1 > b1 || (a1 === b1 && a2 > b2)) peor = c;
