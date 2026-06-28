@@ -13,6 +13,7 @@ import {
 import { Waveform } from '@/components/Waveform';
 import { getNewActivityCount } from '@/lib/activity';
 import { haptics } from '@/lib/haptics';
+import { logError } from '@/lib/log';
 import { getMyProfile } from '@/lib/profile';
 import { registerPushToken } from '@/lib/push';
 import { touchStreak } from '@/lib/streak';
@@ -62,8 +63,9 @@ export default function Home() {
               setCelebrate(s.count);
             }
           }
-        } catch {
+        } catch (e) {
           // sin red / backend sin configurar: dejamos la home como está
+          logError('home.load', e);
         }
       })();
       return () => {

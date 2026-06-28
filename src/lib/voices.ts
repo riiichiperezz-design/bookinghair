@@ -2,6 +2,7 @@ import { decode as decodeBase64 } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
+import { logError } from './log';
 import { getMyProfile } from './profile';
 import { ensureSession } from './session';
 import { supabase } from './supabase';
@@ -111,7 +112,7 @@ export async function uploadVoice(uri: string, durationMs: number) {
   // queda 'pendiente' hasta que la Edge Function la apruebe/rechace.
   supabase.functions
     .invoke('moderar-audio', { body: { audioId: inserted.id } })
-    .catch(() => {});
+    .catch((e) => logError('moderar-audio.invoke', e));
 }
 
 /**

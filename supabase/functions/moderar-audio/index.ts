@@ -6,6 +6,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import { moderador } from './config.ts';
+import { POLITICA_MODERACION } from './categorias.ts';
 
 function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -71,6 +72,20 @@ Deno.serve(async (req: Request) => {
     await supa
       .from('cola_moderacion')
       .insert({ audio_id: audioId, motivo: resultado.categoria ?? 'sin_clasificar' });
+  }
+
+  // Conservar evidencia cuando la categoría lo exige (p. ej. CSAM) — legal.
+  const cat = resultado.categoria;
+  const pol = cat
+    ? (POLITICA_MODERACION as Record<string, { conservarEvidencia?: boolean }>)[cat]
+    : undefined;
+  if (pol?.conservarEvidencia) {
+    await supa.from('moderacion_evidencia').insert({
+      audio_id: audioId,
+      categoria: cat,
+      transcripcion: resultado.transcripcion ?? null,
+      audio_path: voz.audio_path,
+    });
   }
 
   return json({ ok: true, estado }, 200);
