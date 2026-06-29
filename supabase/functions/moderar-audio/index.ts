@@ -8,14 +8,24 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { moderador } from './config.ts';
 import { POLITICA_MODERACION } from './categorias.ts';
 
+// Cabeceras CORS: la app web (GitHub Pages) invoca esta función desde el
+// navegador, que primero manda un preflight OPTIONS.
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...CORS },
   });
 }
 
 Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'metodo_no_permitido' }, 405);
 
   // Validación de entrada. Acepta tanto la invocación directa de la app

@@ -189,7 +189,10 @@ export async function claimVoice(): Promise<Voice | null> {
       }
     | null
     | undefined;
-  if (!row) return null;
+  // claim_voice() devuelve el tipo `voices`; cuando no hay nada que repartir
+  // PostgREST lo serializa como una fila con TODOS los campos a null. La
+  // detectamos por la ausencia de id para no tratarla como una voz real.
+  if (!row || !row.id) return null;
 
   const { data: sender } = await supabase
     .from('profiles')
