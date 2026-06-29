@@ -18,9 +18,11 @@ function json(body: unknown, status: number): Response {
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'metodo_no_permitido' }, 405);
 
-  // Validación de entrada
+  // Validación de entrada. Acepta tanto la invocación directa de la app
+  // ({ audioId }) como el payload de un Database Webhook de Supabase
+  // ({ type, table, record: { id, ... } }).
   const body = await req.json().catch(() => null);
-  const audioId: unknown = body?.audioId ?? body?.audio_id;
+  const audioId: unknown = body?.audioId ?? body?.audio_id ?? body?.record?.id;
   if (typeof audioId !== 'string' || audioId.length === 0) {
     return json({ error: 'audioId_requerido' }, 400);
   }
