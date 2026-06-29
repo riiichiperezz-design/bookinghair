@@ -24,6 +24,7 @@ export default function SetupScreen() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [country, setCountry] = useState<string | null>(null);
+  const [over17, setOver17] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,9 +35,10 @@ export default function SetupScreen() {
   }, []);
 
   const valid = USERNAME_RE.test(username);
+  const canSubmit = valid && over17 && !saving;
 
   const submit = async () => {
-    if (!valid || saving) return;
+    if (!canSubmit) return;
     setSaving(true);
     setError(null);
     try {
@@ -128,10 +130,25 @@ export default function SetupScreen() {
           </ScrollView>
 
           <View style={styles.footer}>
+            {/* Gate de edad: ecco es +17 (mensajes de voz de desconocidos). */}
+            <Pressable
+              onPress={() => setOver17((v) => !v)}
+              style={({ pressed }) => [styles.ageRow, pressed && styles.pressed]}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: over17 }}
+              accessibilityLabel="Confirmo que tengo 17 años o más"
+            >
+              <View style={[styles.checkbox, over17 && styles.checkboxOn]}>
+                {over17 && <Text style={styles.checkboxMark}>✓</Text>}
+              </View>
+              <Text style={styles.ageText}>
+                Tengo 17 años o más y entiendo que recibiré voces de desconocidos.
+              </Text>
+            </Pressable>
             <PrimaryButton
               label={saving ? 'Guardando…' : 'Entrar a ecco'}
               onPress={submit}
-              disabled={!valid || saving}
+              disabled={!canSubmit}
             />
             <Text style={styles.consent}>
               Al entrar aceptas la{' '}
@@ -260,5 +277,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xl,
     paddingTop: spacing.sm,
+  },
+  ageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOn: {
+    backgroundColor: colors.ember,
+    borderColor: colors.ember,
+  },
+  checkboxMark: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: '#ffffff',
+  },
+  ageText: {
+    flex: 1,
+    fontFamily: fonts.labelRegular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textSecondary,
   },
 });

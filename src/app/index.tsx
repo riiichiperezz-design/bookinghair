@@ -17,7 +17,12 @@ import { logError } from '@/lib/log';
 import { getMyProfile } from '@/lib/profile';
 import { registerPushToken } from '@/lib/push';
 import { touchStreak } from '@/lib/streak';
-import { getCredits, receivedCount, waitingCount } from '@/lib/voices';
+import {
+  getCredits,
+  receivedCount,
+  remoderarPendientes,
+  waitingCount,
+} from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 export default function Home() {
@@ -45,6 +50,9 @@ export default function Home() {
           }
           setUsername(profile.username);
           registerPushToken().catch(() => {});
+          // Red de seguridad: reintenta moderar tus voces que se hayan
+          // quedado 'pendiente' (p. ej. si falló la invocación inicial).
+          remoderarPendientes().catch(() => {});
           const [n, r, s, a, w] = await Promise.all([
             getCredits(),
             receivedCount(),

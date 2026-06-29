@@ -10,31 +10,33 @@ producción, y los procedimientos asociados.
    `aprobado` / `rechazado` / `revision_humana`.
 4. `claim_voice()` **solo reparte audios `aprobado`**.
 
-> Estado hoy: el moderador activo es **`ModeradorStub`**, que **aprueba por
-> defecto** (solo desarrollo). La arquitectura está completa, pero **el filtrado
-> real NO está activo** hasta hacer el paso 2 de abajo. **No abrir a usuarios
-> reales con el Stub.**
+> Selección automática del moderador
+> ([`config.ts`](./supabase/functions/moderar-audio/config.ts)): si están las
+> claves `GROQ_API_KEY` **y** `OPENAI_API_KEY`, se usa **`ModeradorAPI`** (real);
+> si no, **`ModeradorStub`** (aprueba por defecto, **solo desarrollo**). Puedes
+> forzar con `MODERADOR_IMPL=stub|api`. **No abrir a usuarios reales con el Stub.**
 
 ## 2. 🔴 Activar el clasificador real (`ModeradorAPI`)
-Pieza sustituible: no hay que tocar el resto del sistema.
+Pieza sustituible: no hay que tocar el resto del sistema. La implementación real
+ya está en
+[`moderador-api.ts`](./supabase/functions/moderar-audio/moderador-api.ts):
+transcribe el `audioUrl` (Groq Whisper) y clasifica el **significado** (OpenAI
+Moderation + Groq Llama para las categorías extra), mapeando a las categorías de
+[`categorias.ts`](./supabase/functions/moderar-audio/categorias.ts) para que
+`evaluarCategorias` decida.
 
-1. Elige proveedores (no incluidos aquí): uno de **transcripción** (voz→texto) y
-   uno de **clasificación de texto**.
-2. Implementa los `TODO` de
-   [`supabase/functions/moderar-audio/moderador-api.ts`](./supabase/functions/moderar-audio/moderador-api.ts):
-   transcribir el `audioUrl` y clasificar el **significado** del mensaje en las
-   categorías de [`categorias.ts`](./supabase/functions/moderar-audio/categorias.ts).
-   Devuelve las categorías detectadas y deja que `evaluarCategorias` decida.
-3. Configura los secretos (server-side, nunca en el cliente):
+1. Configura los secretos (server-side, nunca en el cliente ni en el repo):
    ```bash
-   supabase secrets set MODERADOR_IMPL=api \
-     MODERACION_TRANSCRIPCION_API_KEY=... \
-     MODERACION_CLASIFICADOR_API_KEY=...
+   supabase secrets set GROQ_API_KEY=... OPENAI_API_KEY=...
+   # opcional: forzar implementación
+   supabase secrets set MODERADOR_IMPL=api
    ```
-4. Vuelve a desplegar (push a `supabase/functions/**` o `supabase functions deploy moderar-audio`).
+2. Vuelve a desplegar (push a `supabase/functions/**` o
+   `supabase functions deploy moderar-audio`).
 
-Regla de oro ya implementada: **ante error o duda, nunca se aprueba**
-(se queda `pendiente` o `revision_humana`).
+Regla de oro ya implementada: **ante error o duda, nunca se aprueba** — si el
+proveedor falla, `ModeradorAPI` lanza y la función deja la voz `pendiente`
+(nunca `aprobado`).
 
 ## 3. Política de contenido
 Definida como constante única en
@@ -60,11 +62,38 @@ aprueban**.
   leer transcripción y aprobar/rechazar.
 - Recomendado: definir SLA de revisión y registro de decisiones.
 
-## 6. Anti-abuso (activo)
-- Límite de **30 voces / 24 h por usuario** (trigger `check_voice_rate_limit`,
-  migración `0007`). Ajustable en el SQL.
+## 6. Fiabilidad de la moderación (no quedarse en `pendiente`)
+La voz se modera de forma asíncrona. Si la invocación inicial falla, la voz
+quedaría `pendiente` (y por tanto **no repartible**, lo cual es seguro pero la
+deja en el limbo). Tres capas evitan que se quede ahí:
+
+1. **Idempotencia** — la Edge Function sale temprano si la voz ya tiene decisión
+   (`estado_moderacion !== 'pendiente'`). Reintentar es seguro: no duplica
+   trabajo ni evidencia.
+2. **Barrido en cliente** — al abrir la home, `remoderarPendientes()`
+   ([`src/lib/voices.ts`](./src/lib/voices.ts)) re-invoca la función para tus
+   voces `pendiente` de las últimas 24 h.
+3. **Disparo en servidor (recomendado, independiente del cliente)** — crea un
+   **Database Webhook** en Supabase para no depender de que la app esté abierta:
+   - Dashboard → *Database* → *Webhooks* → *Create a new hook*.
+   - Tabla `public.voices`, evento **INSERT**.
+   - Tipo **Supabase Edge Functions** → función `moderar-audio`.
+   - El webhook envía `{ record: { id, ... } }`; la función ya acepta
+     `audioId`/`audio_id`, así que mapea el body a `{ "audioId": "{{ record.id }}" }`
+     (o añade soporte para `record.id` en `index.ts` si usas el payload crudo).
+   Con esto cada INSERT dispara la moderación en el servidor; el barrido en
+   cliente queda como red de seguridad secundaria.
+
+## 7. Anti-abuso (activo)
+- Límite de **30 voces / 24 h por usuario** y **40 / 24 h por dispositivo**
+  (trigger `check_voice_rate_limit`, migraciones `0007` + `0008`). El
+  `device_id` lo aporta el cliente ([`src/lib/device.ts`](./src/lib/device.ts)),
+  así que es un límite **blando** que sube el listón frente a multicuentas desde
+  el mismo aparato; el control fuerte (captcha/attestation) queda como mejora.
+- **Gate de edad +17** en el onboarding (`/setup`): hay que confirmarlo para
+  entrar.
 - Reportar/bloquear y ocultado automático con 3+ incidencias (migración `0004`).
 
-## 7. Observabilidad
+## 8. Observabilidad
 - Punto único de errores en [`src/lib/log.ts`](./src/lib/log.ts), listo para
   enchufar **Sentry** (instrucciones en el propio archivo).

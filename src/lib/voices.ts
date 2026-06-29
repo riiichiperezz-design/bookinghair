@@ -2,6 +2,7 @@ import { decode as decodeBase64 } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
+import { getDeviceId } from './device';
 import { logError } from './log';
 import { getMyProfile } from './profile';
 import { ensureSession } from './session';
@@ -96,23 +97,56 @@ export async function uploadVoice(uri: string, durationMs: number) {
   if (upErr) throw upErr;
 
   // La voz nace 'pendiente' (default de la columna estado_moderacion).
-  const { data: inserted, error: insErr } = await supabase
+  const base = {
+    sender_id: user.id,
+    audio_path: path,
+    duration_ms: Math.round(durationMs),
+    country: profile?.country ?? null,
+  };
+  const deviceId = await getDeviceId();
+
+  let ins = await supabase
     .from('voices')
-    .insert({
-      sender_id: user.id,
-      audio_path: path,
-      duration_ms: Math.round(durationMs),
-      country: profile?.country ?? null,
-    })
+    .insert({ ...base, device_id: deviceId })
     .select('id')
     .single();
-  if (insErr) throw insErr;
+  // Compatibilidad: si aún no se ha aplicado la migración 0008 (sin columna
+  // device_id), reintenta sin ella.
+  if (ins.error && /device_id/.test(ins.error.message)) {
+    ins = await supabase.from('voices').insert(base).select('id').single();
+  }
+  if (ins.error) throw ins.error;
+  const insertedId = ins.data?.id;
 
   // Dispara la MODERACIÓN PREVIA (server-side). No bloquea el envío: la voz
   // queda 'pendiente' hasta que la Edge Function la apruebe/rechace.
-  supabase.functions
-    .invoke('moderar-audio', { body: { audioId: inserted.id } })
-    .catch((e) => logError('moderar-audio.invoke', e));
+  if (insertedId) {
+    supabase.functions
+      .invoke('moderar-audio', { body: { audioId: insertedId } })
+      .catch((e) => logError('moderar-audio.invoke', e));
+  }
+}
+
+/**
+ * Red de seguridad: re-dispara la moderación de TUS voces que se quedaron
+ * 'pendiente' (p. ej. si falló la invocación inicial). La Edge Function es
+ * idempotente: si ya están decididas, no hace nada.
+ */
+export async function remoderarPendientes(): Promise<void> {
+  const user = await ensureSession();
+  const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from('voices')
+    .select('id')
+    .eq('sender_id', user.id)
+    .eq('estado_moderacion', 'pendiente')
+    .gt('created_at', desde)
+    .limit(10);
+  for (const v of data ?? []) {
+    supabase.functions
+      .invoke('moderar-audio', { body: { audioId: v.id } })
+      .catch((e) => logError('remoderar-pendientes', e));
+  }
 }
 
 /**

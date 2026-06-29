@@ -41,6 +41,13 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if (vozErr || !voz) return json({ error: 'audio_no_encontrado' }, 404);
 
+  // Idempotencia: si la voz ya tiene una decisión (aprobado/rechazado/
+  // revision_humana), no la re-moderamos. Esto hace seguro reintentar la
+  // invocación (cliente o webhook) sin duplicar trabajo ni evidencia.
+  if (voz.estado_moderacion && voz.estado_moderacion !== 'pendiente') {
+    return json({ ok: true, estado: voz.estado_moderacion, skipped: true }, 200);
+  }
+
   // URL firmada temporal para que el moderador acceda al audio.
   const { data: signed } = await supa.storage
     .from('voices')
