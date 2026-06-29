@@ -3,9 +3,11 @@ import { ModeradorStub } from './moderador-stub.ts';
 import { ModeradorAPI } from './moderador-api.ts';
 
 // ── ÚNICO PUNTO DE CONFIGURACIÓN ──
-// Cambia a 'api' (o define MODERADOR_IMPL=api en los secretos) cuando el
-// ModeradorAPI esté listo. No hay que tocar nada más del sistema.
-const IMPL = (Deno.env.get('MODERADOR_IMPL') as 'stub' | 'api') ?? 'stub';
+// Usa el moderador REAL si están las claves (GROQ_API_KEY + OPENAI_API_KEY),
+// salvo que se fuerce con MODERADOR_IMPL ('stub' | 'api').
+const forzado = Deno.env.get('MODERADOR_IMPL') as 'stub' | 'api' | undefined;
+const hayClaves = !!Deno.env.get('GROQ_API_KEY') && !!Deno.env.get('OPENAI_API_KEY');
+const IMPL: 'stub' | 'api' = forzado ?? (hayClaves ? 'api' : 'stub');
 
 export const moderador: ModeradorContenido =
   IMPL === 'api' ? new ModeradorAPI() : new ModeradorStub();
