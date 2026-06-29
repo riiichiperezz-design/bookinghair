@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/buttons';
+import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
-import { COUNTRIES, detectCountry } from '@/constants/countries';
+import { WorldMapPicker } from '@/components/WorldMapPicker';
+import { type Country, detectCountry, flagFor } from '@/constants/countries';
+import { getApproxLocation } from '@/lib/location';
 import { saveProfile, UsernameTakenError } from '@/lib/profile';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -24,6 +26,8 @@ export default function SetupScreen() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [country, setCountry] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
   const [over17, setOver17] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +38,27 @@ export default function SetupScreen() {
     if (d) setCountry(d);
   }, []);
 
+  const pickCountry = (c: Country) => {
+    setCountry(c.name);
+    setRegion(null); // al tocar el mapa se elige país; la región vendrá del GPS
+  };
+
+  const useMyLocation = async () => {
+    if (locating) return;
+    setLocating(true);
+    try {
+      const loc = await getApproxLocation();
+      if (loc) {
+        setCountry(loc.country.name);
+        setRegion(loc.region);
+      } else {
+        setError('No pudimos acceder a tu ubicación. Elígela en el mapa.');
+      }
+    } finally {
+      setLocating(false);
+    }
+  };
+
   const valid = USERNAME_RE.test(username);
   const canSubmit = valid && over17 && !saving;
 
@@ -42,7 +67,7 @@ export default function SetupScreen() {
     setSaving(true);
     setError(null);
     try {
-      await saveProfile(username, country);
+      await saveProfile(username, country, region);
       router.replace('/intro');
     } catch (e) {
       if (e instanceof UsernameTakenError) {
@@ -99,34 +124,26 @@ export default function SetupScreen() {
               {error ?? 'minúsculas, números y _ · 3 a 20 caracteres'}
             </Text>
 
-            {/* País */}
+            {/* De dónde eres — mapa interactivo */}
             <Text style={styles.sectionLabel}>¿de dónde eres?</Text>
-            <View style={styles.countryWrap}>
-              {COUNTRIES.map((c) => {
-                const selected = country === c.name;
-                return (
-                  <Pressable
-                    key={c.name}
-                    onPress={() => setCountry(selected ? null : c.name)}
-                    style={({ pressed }) => [
-                      styles.chip,
-                      selected && styles.chipSelected,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={styles.chipFlag}>{c.flag}</Text>
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selected && styles.chipTextSelected,
-                      ]}
-                    >
-                      {c.name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+            <Text style={styles.mapHint}>
+              Toca el mundo para situarte. Solo se comparte tu zona, nunca tu
+              ubicación exacta.
+            </Text>
+            <WorldMapPicker selected={country} onSelect={pickCountry} />
+
+            <View style={styles.placeRow}>
+              <Text style={styles.placeLabel} numberOfLines={1}>
+                {country
+                  ? `${flagFor(country)} ${country}${region ? ` · ${region}` : ''}`
+                  : 'Sin elegir todavía'}
+              </Text>
             </View>
+
+            <GhostButton
+              label={locating ? 'Buscando…' : '📍 usar mi ubicación'}
+              onPress={useMyLocation}
+            />
           </ScrollView>
 
           <View style={styles.footer}>
@@ -245,33 +262,24 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  countryWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+  mapHint: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textMuted,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.md,
   },
-  chip: {
-    flexDirection: 'row',
+  placeRow: {
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingVertical: 8,
-    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
   },
-  chipSelected: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.ember,
+  placeLabel: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: colors.textPrimary,
   },
-  chipFlag: { fontSize: 15 },
-  chipText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  chipTextSelected: { color: colors.textPrimary },
   pressed: { opacity: 0.7 },
   footer: {
     paddingHorizontal: spacing.xl,

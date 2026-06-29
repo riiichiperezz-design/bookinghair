@@ -18,11 +18,18 @@ import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, FlagIcon, LockIcon, MicIcon } from '@/components/icons';
 import { ReactionsRow } from '@/components/ReactionsRow';
+import { RetentionCard } from '@/components/RetentionCard';
 import { flagFor } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
 import { blockSender, reportVoice } from '@/lib/moderation';
 import { inviteFriends } from '@/lib/share';
-import { addReaction, claimVoice, getCredits, type Voice } from '@/lib/voices';
+import {
+  addReaction,
+  claimVoice,
+  getCredits,
+  markVoiceHeard,
+  type Voice,
+} from '@/lib/voices';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 function formatMs(ms: number) {
@@ -62,6 +69,7 @@ function VoiceInner() {
   const router = useRouter();
   const [status, setStatus] = useState<Status>('loading');
   const [voice, setVoice] = useState<Voice | null>(null);
+  const [heardMarked, setHeardMarked] = useState(false);
 
   const player = useAudioPlayer(voice?.audioUrl ?? undefined);
   const playerStatus = useAudioPlayerStatus(player);
@@ -101,6 +109,12 @@ function VoiceInner() {
     } else {
       if (playerStatus.didJustFinish) player.seekTo(0);
       player.play();
+      // Escucha única: en cuanto se reproduce, queda marcada como oída y no
+      // podrá volver a abrirse desde "tus voces".
+      if (voice && !heardMarked) {
+        setHeardMarked(true);
+        markVoiceHeard(voice.id).catch(() => {});
+      }
     }
   };
 
@@ -126,6 +140,18 @@ function VoiceInner() {
     );
   }
 
+  // Ya escuchó todo lo disponible: momento de retención (vuelve mañana).
+  if (status === 'empty') {
+    return (
+      <View style={styles.flexBody}>
+        <RetentionCard />
+        <View style={styles.bottom}>
+          <GhostButton label="Invitar a amigos" onPress={inviteFriends} />
+        </View>
+      </View>
+    );
+  }
+
   if (status !== 'ready') {
     const copy = {
       needSend: {
@@ -133,12 +159,6 @@ function VoiceInner() {
         title: 'Manda una voz para recibir',
         subtitle:
           'En ecco das para recibir: suelta un audio al mundo y te llegará el de un desconocido.',
-      },
-      empty: {
-        emoji: '🌙',
-        title: 'No hay voces ahora mismo',
-        subtitle:
-          'Ya las has escuchado todas. Vuelve en un rato: cada audio se entrega a una sola persona.',
       },
       error: {
         emoji: '😕',
@@ -160,14 +180,10 @@ function VoiceInner() {
             icon={<MicIcon size={20} color="#ffffff" />}
             onPress={() => router.replace('/record')}
           />
-          {status === 'empty' ? (
-            <GhostButton label="Invitar a amigos" onPress={inviteFriends} />
-          ) : (
-            <GhostButton
-              label="volver al inicio"
-              onPress={() => router.replace('/')}
-            />
-          )}
+          <GhostButton
+            label="volver al inicio"
+            onPress={() => router.replace('/')}
+          />
         </View>
       </View>
     );

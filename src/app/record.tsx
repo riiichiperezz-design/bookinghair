@@ -23,7 +23,7 @@ import { inviteFriends } from '@/lib/share';
 import { uploadVoice } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
-const MAX_MS = 60_000; // duración máxima de una voz
+const MAX_MS = 30_000; // duración máxima de una voz
 const MIN_MS = 1_000; // duración mínima para poder enviar
 
 function formatMs(ms: number) {
@@ -80,7 +80,7 @@ function IdleBody({
       </View>
       <Text style={styles.timer}>{timer}</Text>
       <Text style={styles.hint}>
-        {recording ? 'toca para parar · máx 60s' : 'toca para empezar a grabar'}
+        {recording ? 'toca para parar · máx 30s' : 'toca para empezar a grabar'}
       </Text>
     </View>
   );

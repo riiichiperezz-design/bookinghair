@@ -58,7 +58,14 @@ export type Voice = {
   created_at: string;
   audioUrl: string;
   username: string | null;
+  heardAt: string | null;
 };
+
+/** Marca una voz como escuchada (escucha única). Idempotente en el servidor. */
+export async function markVoiceHeard(voiceId: string): Promise<void> {
+  await ensureSession();
+  await supabase.rpc('mark_heard', { p_voice: voiceId });
+}
 
 function extFromType(type: string) {
   if (type.includes('webm')) return 'webm';
@@ -208,6 +215,7 @@ export async function claimVoice(): Promise<Voice | null> {
     created_at: row.created_at,
     country: row.country ?? sender?.country ?? null,
     username: sender?.username ?? null,
+    heardAt: null,
     audioUrl: await signedUrl(row.audio_path),
   };
 }
@@ -217,7 +225,7 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
   const user = await ensureSession();
   const { data, error } = await supabase
     .from('voices')
-    .select('id, sender_id, audio_path, duration_ms, country, created_at, claimed_at')
+    .select('id, sender_id, audio_path, duration_ms, country, created_at, claimed_at, heard_at')
     .eq('claimed_by', user.id)
     .order('claimed_at', { ascending: false })
     .limit(100);
@@ -244,6 +252,7 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
       created_at: r.created_at,
       country: r.country ?? prof?.country ?? null,
       username: prof?.username ?? null,
+      heardAt: r.heard_at ?? null,
       audioUrl: urls.get(r.audio_path) ?? '',
     };
   });

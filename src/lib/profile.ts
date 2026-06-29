@@ -5,6 +5,7 @@ export type Profile = {
   id: string;
   username: string | null;
   country: string | null;
+  region: string | null;
   rol: string;
 };
 
@@ -13,7 +14,7 @@ export async function getMyProfile(): Promise<Profile | null> {
   const user = await ensureSession();
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, country, rol')
+    .select('id, username, country, region, rol')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
@@ -28,11 +29,15 @@ export class UsernameTakenError extends Error {
 }
 
 /** Crea o actualiza el perfil del usuario actual. */
-export async function saveProfile(username: string, country: string | null) {
+export async function saveProfile(
+  username: string,
+  country: string | null,
+  region: string | null = null
+) {
   const user = await ensureSession();
   const { error } = await supabase
     .from('profiles')
-    .upsert({ id: user.id, username, country });
+    .upsert({ id: user.id, username, country, region });
   if (error) {
     // 23505 = violación de unicidad (username repetido)
     if ((error as { code?: string }).code === '23505') {

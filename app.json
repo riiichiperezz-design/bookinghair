@@ -38,6 +38,12 @@
         }
       ],
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ecco usa tu ubicación solo para situar tu ciudad/región aproximada en el mapa. Nunca compartimos tu ubicación exacta."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#140805",

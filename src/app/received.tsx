@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { EmberBackground } from '@/components/EmberBackground';
-import { ArrowLeftIcon, PauseIcon, PlayIcon } from '@/components/icons';
+import { ArrowLeftIcon, LockIcon, PauseIcon, PlayIcon } from '@/components/icons';
 import { flagFor } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
 import {
@@ -168,6 +168,12 @@ function Lists({ tab }: { tab: Tab }) {
   }, [currentId]);
 
   const toggle = (id: string) => {
+    // Escucha única: una voz recibida ya escuchada no se puede reproducir.
+    const rec = received?.find((v) => v.id === id);
+    if (rec?.heardAt) {
+      haptics.tap();
+      return;
+    }
     haptics.tap();
     if (currentId === id) {
       if (playing) {
@@ -223,25 +229,35 @@ function Lists({ tab }: { tab: Tab }) {
             colors={[colors.ember]}
           />
         }
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Avatar name={item.username ?? '?'} size={44} />
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemName} numberOfLines={1}>
-                {item.username ? `@${item.username}` : 'anónima'}
-              </Text>
-              <Text style={styles.itemMeta} numberOfLines={1}>
-                {item.country
-                  ? `${flagFor(item.country)} ${item.country} · ${formatMs(item.duration_ms)}`
-                  : formatMs(item.duration_ms)}
-              </Text>
+        renderItem={({ item }) => {
+          const heard = item.heardAt != null;
+          return (
+            <View style={[styles.item, heard && styles.itemHeard]}>
+              <Avatar name={item.username ?? '?'} size={44} />
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemName} numberOfLines={1}>
+                  {item.username ? `@${item.username}` : 'anónima'}
+                </Text>
+                <Text style={styles.itemMeta} numberOfLines={1}>
+                  {heard ? '🔒 ya escuchada · ' : ''}
+                  {item.country
+                    ? `${flagFor(item.country)} ${item.country} · ${formatMs(item.duration_ms)}`
+                    : formatMs(item.duration_ms)}
+                </Text>
+              </View>
+              {heard ? (
+                <View style={styles.lockBtn}>
+                  <LockIcon size={18} color={colors.textMuted} />
+                </View>
+              ) : (
+                <PlayButton
+                  playing={currentId === item.id && playing}
+                  onPress={() => toggle(item.id)}
+                />
+              )}
             </View>
-            <PlayButton
-              playing={currentId === item.id && playing}
-              onPress={() => toggle(item.id)}
-            />
-          </View>
-        )}
+          );
+        }}
       />
     );
   }
@@ -417,11 +433,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textPrimary,
   },
+  itemHeard: {
+    opacity: 0.6,
+  },
   playBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
     backgroundColor: colors.ember,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },

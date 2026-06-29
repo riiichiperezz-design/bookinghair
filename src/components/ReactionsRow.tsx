@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -9,15 +10,15 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { haptics } from '@/lib/haptics';
-import { colors, radius } from '@/theme';
+import { colors } from '@/theme';
 
-const REACTIONS = ['❤️', '😂', '🔥', '🥹'] as const;
+const REACTIONS = ['❤️', '😂', '🔥', '🥹', '😮'] as const;
 
 type Props = {
   onReact?: (emoji: string) => void;
 };
 
-/** Fila de reacciones rápidas con emoji. Selección única, con "pop" animado. */
+/** Fila de reacciones con "pop", brillo y un estallido de emojis que suben. */
 export function ReactionsRow({ onReact }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -42,6 +43,8 @@ export function ReactionsRow({ onReact }: Props) {
   );
 }
 
+type Particle = { id: number; dx: number };
+
 function ReactionItem({
   emoji,
   selected,
@@ -52,29 +55,100 @@ function ReactionItem({
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
+  const glow = useSharedValue(0);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const nextId = useRef(0);
+
+  const removeParticle = useCallback((id: number) => {
+    setParticles((ps) => ps.filter((p) => p.id !== id));
+  }, []);
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
+
+  const burst = () => {
+    // Pop del botón
+    scale.value = withSequence(
+      withTiming(1.4, { duration: 110 }),
+      withSpring(1, { damping: 6, stiffness: 220 })
+    );
+    // Destello del halo
+    glow.value = withSequence(
+      withTiming(1, { duration: 120 }),
+      withTiming(0, { duration: 520 })
+    );
+    // Estallido de 3 emojis que suben y se desvanecen
+    const nuevos: Particle[] = Array.from({ length: 3 }).map(() => ({
+      id: nextId.current++,
+      dx: Math.round(Math.random() * 36 - 18),
+    }));
+    setParticles((ps) => [...ps, ...nuevos]);
+  };
 
   return (
     <Pressable
       onPress={() => {
-        scale.value = withSequence(
-          withTiming(1.35, { duration: 110 }),
-          withSpring(1, { damping: 6, stiffness: 220 })
-        );
+        burst();
         onPress();
       }}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={`Reaccionar ${emoji}`}
     >
-      <Animated.View
-        style={[styles.item, selected && styles.itemSelected, animatedStyle]}
-      >
-        <Text style={styles.emoji}>{emoji}</Text>
-      </Animated.View>
+      <View style={styles.itemWrap}>
+        {particles.map((p) => (
+          <FloatingEmoji
+            key={p.id}
+            emoji={emoji}
+            dx={p.dx}
+            onDone={() => removeParticle(p.id)}
+          />
+        ))}
+        <Animated.View style={[styles.glow, glowStyle]} />
+        <Animated.View
+          style={[styles.item, selected && styles.itemSelected, animatedStyle]}
+        >
+          <Text style={styles.emoji}>{emoji}</Text>
+        </Animated.View>
+      </View>
     </Pressable>
+  );
+}
+
+function FloatingEmoji({
+  emoji,
+  dx,
+  onDone,
+}: {
+  emoji: string;
+  dx: number;
+  onDone: () => void;
+}) {
+  const t = useSharedValue(0);
+  // Arranca la animación una sola vez (al montar).
+  const started = useRef(false);
+  if (!started.current) {
+    started.current = true;
+    t.value = withTiming(1, { duration: 850 }, (finished) => {
+      if (finished) runOnJS(onDone)();
+    });
+  }
+
+  const style = useAnimatedStyle(() => ({
+    opacity: 1 - t.value,
+    transform: [
+      { translateY: -64 * t.value },
+      { translateX: dx * t.value },
+      { scale: 0.7 + t.value * 0.6 },
+    ],
+  }));
+
+  return (
+    <Animated.Text style={[styles.floating, style]} pointerEvents="none">
+      {emoji}
+    </Animated.Text>
   );
 }
 
@@ -82,12 +156,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 11,
+    gap: 10,
+  },
+  itemWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   item: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
@@ -98,7 +176,20 @@ const styles = StyleSheet.create({
     borderColor: colors.ember,
     backgroundColor: colors.surfaceElevated,
   },
+  glow: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.ember,
+  },
   emoji: {
-    fontSize: 21,
+    fontSize: 23,
+  },
+  floating: {
+    position: 'absolute',
+    top: 0,
+    fontSize: 22,
+    zIndex: 2,
   },
 });

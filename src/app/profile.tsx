@@ -16,8 +16,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon } from '@/components/icons';
-import { COUNTRIES } from '@/constants/countries';
+import { WorldMapPicker } from '@/components/WorldMapPicker';
+import { type Country, flagFor } from '@/constants/countries';
 import { deleteMyData, getAccountEmail, linkAccount } from '@/lib/account';
+import { getApproxLocation } from '@/lib/location';
 import { enableDailyReminder } from '@/lib/notifications';
 import { getMyProfile, saveProfile, UsernameTakenError } from '@/lib/profile';
 import { colors, fonts, radius, spacing } from '@/theme';
@@ -29,6 +31,8 @@ export default function ProfileScreen() {
   const [loaded, setLoaded] = useState(false);
   const [username, setUsername] = useState('');
   const [country, setCountry] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +52,7 @@ export default function ProfileScreen() {
         if (!active) return;
         setUsername(p?.username ?? '');
         setCountry(p?.country ?? null);
+        setRegion(p?.region ?? null);
         setIsAdmin(p?.rol === 'admin');
         setAccountEmail(email);
         setLoaded(true);
@@ -87,12 +92,31 @@ export default function ProfileScreen() {
 
   const valid = USERNAME_RE.test(username);
 
+  const pickCountry = (c: Country) => {
+    setCountry(c.name);
+    setRegion(null);
+  };
+
+  const useMyLocation = async () => {
+    if (locating) return;
+    setLocating(true);
+    try {
+      const loc = await getApproxLocation();
+      if (loc) {
+        setCountry(loc.country.name);
+        setRegion(loc.region);
+      }
+    } finally {
+      setLocating(false);
+    }
+  };
+
   const save = async () => {
     if (!valid || saving) return;
     setSaving(true);
     setError(null);
     try {
-      await saveProfile(username, country);
+      await saveProfile(username, country, region);
       router.back();
     } catch (e) {
       if (e instanceof UsernameTakenError) {
@@ -158,32 +182,18 @@ export default function ProfileScreen() {
               </Text>
 
               <Text style={styles.sectionLabel}>¿de dónde eres?</Text>
-              <View style={styles.countryWrap}>
-                {COUNTRIES.map((c) => {
-                  const selected = country === c.name;
-                  return (
-                    <Pressable
-                      key={c.name}
-                      onPress={() => setCountry(selected ? null : c.name)}
-                      style={({ pressed }) => [
-                        styles.chip,
-                        selected && styles.chipSelected,
-                        pressed && styles.pressed,
-                      ]}
-                    >
-                      <Text style={styles.chipFlag}>{c.flag}</Text>
-                      <Text
-                        style={[
-                          styles.chipText,
-                          selected && styles.chipTextSelected,
-                        ]}
-                      >
-                        {c.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+              <WorldMapPicker selected={country} onSelect={pickCountry} />
+              <View style={styles.placeRow}>
+                <Text style={styles.placeLabel} numberOfLines={1}>
+                  {country
+                    ? `${flagFor(country)} ${country}${region ? ` · ${region}` : ''}`
+                    : 'Sin elegir'}
+                </Text>
               </View>
+              <GhostButton
+                label={locating ? 'Buscando…' : '📍 usar mi ubicación'}
+                onPress={useMyLocation}
+              />
 
               {/* Cuenta */}
               <Text style={styles.sectionLabel}>tu cuenta</Text>
@@ -342,33 +352,16 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  countryWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  chip: {
-    flexDirection: 'row',
+  placeRow: {
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingVertical: 8,
-    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
   },
-  chipSelected: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.ember,
+  placeLabel: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: colors.textPrimary,
   },
-  chipFlag: { fontSize: 15 },
-  chipText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  chipTextSelected: { color: colors.textPrimary },
   pressed: { opacity: 0.7 },
   mt: { marginTop: spacing.sm },
   accountInfo: {
