@@ -70,8 +70,22 @@ Deno.serve(async (req: Request) => {
   let resultado;
   try {
     resultado = await moderador.moderar({ audioUrl });
-  } catch (_e) {
-    return json({ ok: false, estado: 'pendiente', error: 'moderacion_fallo' }, 200);
+  } catch (e) {
+    // Nunca se aprueba a ciegas: la voz se queda 'pendiente'. Registramos el
+    // motivo del fallo (en logs y en la BD) para poder diagnosticar.
+    const motivo = e instanceof Error ? e.message : String(e);
+    console.error('moderacion_fallo', motivo);
+    await supa
+      .from('voices')
+      .update({
+        motivo_moderacion: `error:${motivo}`,
+        moderado_en: new Date().toISOString(),
+      })
+      .eq('id', audioId);
+    return json(
+      { ok: false, estado: 'pendiente', error: 'moderacion_fallo', motivo },
+      200,
+    );
   }
 
   const estado = resultado.decision; // aprobado | rechazado | revision_humana
