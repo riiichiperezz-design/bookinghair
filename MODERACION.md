@@ -11,28 +11,33 @@ producción, y los procedimientos asociados.
 4. `claim_voice()` **solo reparte audios `aprobado`**.
 
 > Selección automática del moderador
-> ([`config.ts`](./supabase/functions/moderar-audio/config.ts)): si están las
-> claves `GROQ_API_KEY` **y** `OPENAI_API_KEY`, se usa **`ModeradorAPI`** (real);
-> si no, **`ModeradorStub`** (aprueba por defecto, **solo desarrollo**). Puedes
-> forzar con `MODERADOR_IMPL=stub|api`. **No abrir a usuarios reales con el Stub.**
+> ([`config.ts`](./supabase/functions/moderar-audio/config.ts)): si está la clave
+> `GROQ_API_KEY`, se usa **`ModeradorAPI`** (real); si no, **`ModeradorStub`**
+> (aprueba por defecto, **solo desarrollo**). Puedes forzar con
+> `MODERADOR_IMPL=stub|api`. **No abrir a usuarios reales con el Stub.**
 
 ## 2. 🔴 Activar el clasificador real (`ModeradorAPI`)
 Pieza sustituible: no hay que tocar el resto del sistema. La implementación real
 ya está en
-[`moderador-api.ts`](./supabase/functions/moderar-audio/moderador-api.ts):
-transcribe el `audioUrl` (Groq Whisper) y clasifica el **significado** (OpenAI
-Moderation + Groq Llama para las categorías extra), mapeando a las categorías de
+[`moderador-api.ts`](./supabase/functions/moderar-audio/moderador-api.ts) y usa
+**solo Groq** (un proveedor, plan gratuito): transcribe el `audioUrl` con Whisper
+(`whisper-large-v3-turbo`) y clasifica el **significado** con un modelo de chat
+(`openai/gpt-oss-20b`, pesos abiertos en Groq), mapeando a las categorías de
 [`categorias.ts`](./supabase/functions/moderar-audio/categorias.ts) para que
 `evaluarCategorias` decida.
 
-1. Configura los secretos (server-side, nunca en el cliente ni en el repo):
+1. Configura el secreto (server-side, nunca en el cliente ni en el repo):
    ```bash
-   supabase secrets set GROQ_API_KEY=... OPENAI_API_KEY=...
+   supabase secrets set GROQ_API_KEY=...
    # opcional: forzar implementación
    supabase secrets set MODERADOR_IMPL=api
    ```
 2. Vuelve a desplegar (push a `supabase/functions/**` o
    `supabase functions deploy moderar-audio`).
+
+> Nota sobre modelos: Groq deprecó `llama-guard` y `llama-3.x` durante 2026; por
+> eso la clasificación usa `openai/gpt-oss-20b`. Si Groq lo deprecara, basta con
+> cambiar `GROQ_MODERATION_MODEL` en `moderador-api.ts`.
 
 Regla de oro ya implementada: **ante error o duda, nunca se aprueba** — si el
 proveedor falla, `ModeradorAPI` lanza y la función deja la voz `pendiente`

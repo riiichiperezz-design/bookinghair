@@ -5,13 +5,16 @@ import {
   evaluarCategorias,
 } from './categorias.ts';
 
-// Modelos (cambiables). Endpoints reales y documentados de cada proveedor.
+// Todo con Groq (un solo proveedor, plan gratuito): Whisper para transcribir y
+// un modelo de chat para clasificar el significado del mensaje en NUESTRAS
+// categorías. Endpoints reales y documentados de Groq.
 const GROQ_TRANSCRIBE_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_WHISPER_MODEL = 'whisper-large-v3-turbo';
-const GROQ_LLM_MODEL = 'llama-3.1-8b-instant';
-const OPENAI_MODERATION_URL = 'https://api.openai.com/v1/moderations';
-const OPENAI_MODERATION_MODEL = 'omni-moderation-latest';
+// Modelo de clasificación. openai/gpt-oss-20b son pesos abiertos alojados en
+// Groq (no la API de pago de OpenAI); es el reemplazo vigente recomendado tras
+// la deprecación de llama-3.1/3.3 y llama-guard.
+const GROQ_MODERATION_MODEL = 'openai/gpt-oss-20b';
 
 function extFromUrl(url: string): string {
   const path = url.split('?')[0];
@@ -19,18 +22,40 @@ function extFromUrl(url: string): string {
   return m ? m[1] : 'm4a';
 }
 
+/** Extrae el primer objeto JSON de un texto (el modelo puede añadir prosa). */
+function extraerJSON(s: string): { categorias?: unknown } | null {
+  const m = s.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try {
+    return JSON.parse(m[0]);
+  } catch {
+    return null;
+  }
+}
+
+const DESCRIPCION_CATEGORIAS = `
+- "${CAT.EXPLOTACION_SEXUAL_INFANTIL}": cualquier contenido sexual que implique a menores de edad.
+- "${CAT.CONTENIDO_SEXUAL_EXPLICITO}": contenido sexual explícito entre adultos.
+- "${CAT.AMENAZAS_VIOLENCIA}": amenazas de daño físico o incitación a la violencia.
+- "${CAT.ACOSO_BULLYING}": acoso, hostigamiento o humillación dirigidos a una persona.
+- "${CAT.ODIO_DISCRIMINACION}": odio o discriminación por raza, etnia, religión, género, orientación, discapacidad, etc.
+- "${CAT.AUTOLESION_SUICIDIO}": contenido sobre autolesión o suicidio.
+- "${CAT.DATOS_PERSONALES}": revela datos que identifican a una persona real (teléfono, dirección, redes, documento).
+- "${CAT.SPAM_ESTAFA}": publicidad, captación a otras plataformas, fraude o estafa.
+- "${CAT.ACTIVIDADES_ILEGALES}": promueve actividades ilegales (drogas, armas, etc.).
+- "${CAT.SUPLANTACION}": se hace pasar por otra persona u organización.`;
+
 /**
- * Moderación real: transcribe con Groq (Whisper) y clasifica con la Moderation
- * API de OpenAI (categorías peligrosas, incluido sexual/menores = CSAM) más una
- * pasada con el LLM de Groq para spam / datos personales / suplantación.
+ * Moderación real (solo Groq): transcribe con Whisper y clasifica el SIGNIFICADO
+ * con un modelo de chat, devolviendo las categorías que incumple.
  *
- * Seguridad: si la transcripción o la clasificación de OpenAI fallan, se LANZA
- * el error (la Edge Function deja el audio 'pendiente'); nunca se aprueba a
- * ciegas. La pasada de Groq para categorías extra es best-effort.
+ * Seguridad: si la transcripción o la clasificación fallan a nivel de API, se
+ * LANZA el error (la Edge Function deja el audio 'pendiente'); nunca se aprueba
+ * a ciegas. Si la clasificación responde pero no se puede interpretar, va a
+ * revisión humana.
  */
 export class ModeradorAPI implements ModeradorContenido {
   private readonly groqKey = Deno.env.get('GROQ_API_KEY') ?? '';
-  private readonly openaiKey = Deno.env.get('OPENAI_API_KEY') ?? '';
 
   async moderar({ audioUrl }: { audioUrl: string }): Promise<ResultadoModeracion> {
     const transcripcion = (await this.transcribir(audioUrl)).trim();
@@ -45,31 +70,19 @@ export class ModeradorAPI implements ModeradorContenido {
       };
     }
 
-    const detectadas: CategoriaModeracion[] = [];
+    const detectadas = await this.clasificar(transcripcion);
 
-    // 1) OpenAI Moderation: categorías peligrosas (debe poder ejecutarse).
-    const omod = await this.clasificarOpenAI(transcripcion);
-    detectadas.push(...omod.categorias);
-
-    // 2) Groq LLM: spam / datos personales / suplantación (best-effort).
-    try {
-      detectadas.push(...(await this.clasificarExtrasGroq(transcripcion)));
-    } catch {
-      // secundario: si falla, seguimos con lo que detectó OpenAI.
-    }
-
-    const ev = evaluarCategorias(detectadas);
-
-    // Duda razonable en categorías graves (sin flag claro) → revisión humana.
-    if (ev.decision === 'aprobado' && omod.dudaGrave) {
+    // El modelo respondió pero no pudimos interpretar la salida: no aprobamos.
+    if (detectadas === null) {
       return {
         decision: 'revision_humana',
         transcripcion,
-        categoria: 'duda_grave',
-        score: omod.scoreMaxGrave,
+        categoria: 'clasificacion_ambigua',
+        score: 0,
       };
     }
 
+    const ev = evaluarCategorias(detectadas);
     return {
       decision: ev.decision,
       transcripcion,
@@ -99,67 +112,21 @@ export class ModeradorAPI implements ModeradorContenido {
     return (data?.text ?? '').toString();
   }
 
-  // ── Clasificación peligrosa (OpenAI Moderation) ──
-  private async clasificarOpenAI(texto: string): Promise<{
-    categorias: CategoriaModeracion[];
-    dudaGrave: boolean;
-    scoreMaxGrave: number;
-  }> {
-    const res = await fetch(OPENAI_MODERATION_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.openaiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ model: OPENAI_MODERATION_MODEL, input: texto }),
-    });
-    if (!res.ok) throw new Error(`moderacion_openai_fallo:${res.status}`);
-    const data = await res.json();
-    const r = data?.results?.[0] ?? {};
-    const c: Record<string, boolean> = r.categories ?? {};
-    const s: Record<string, number> = r.category_scores ?? {};
-
-    const out: CategoriaModeracion[] = [];
-    const add = (cat: CategoriaModeracion) => {
-      if (!out.includes(cat)) out.push(cat);
-    };
-
-    if (c['sexual/minors']) add(CAT.EXPLOTACION_SEXUAL_INFANTIL);
-    if (c['sexual']) add(CAT.CONTENIDO_SEXUAL_EXPLICITO);
-    if (c['violence'] || c['violence/graphic'] || c['harassment/threatening']) {
-      add(CAT.AMENAZAS_VIOLENCIA);
-    }
-    if (c['harassment']) add(CAT.ACOSO_BULLYING);
-    if (c['hate'] || c['hate/threatening']) add(CAT.ODIO_DISCRIMINACION);
-    if (c['self-harm'] || c['self-harm/intent'] || c['self-harm/instructions']) {
-      add(CAT.AUTOLESION_SUICIDIO);
-    }
-    if (c['illicit'] || c['illicit/violent']) add(CAT.ACTIVIDADES_ILEGALES);
-
-    const scoreMaxGrave = Math.max(
-      s['sexual/minors'] ?? 0,
-      s['sexual'] ?? 0,
-      s['violence'] ?? 0,
-      s['hate'] ?? 0,
-      s['self-harm'] ?? 0,
-    );
-    // Zona gris en categorías graves sin flag → marca duda.
-    const dudaGrave = out.length === 0 && scoreMaxGrave >= 0.3;
-    return { categorias: out, dudaGrave, scoreMaxGrave };
-  }
-
-  // ── Categorías extra por significado (Groq LLM, best-effort) ──
-  private async clasificarExtrasGroq(
+  // ── Clasificación por significado (Groq chat) ──
+  // Devuelve las categorías incumplidas, [] si es seguro, o null si la respuesta
+  // no se pudo interpretar (el llamador lo trata como revisión humana).
+  private async clasificar(
     texto: string,
-  ): Promise<CategoriaModeracion[]> {
+  ): Promise<CategoriaModeracion[] | null> {
     const sistema =
-      'Eres un moderador de una app de notas de voz. Analiza el SIGNIFICADO e ' +
-      'INTENCIÓN del mensaje (no listas de palabras) y responde SOLO con un JSON ' +
-      '{"categorias": [...]}. Categorías posibles: "spam_estafa" (publicidad, ' +
-      'captación a otras plataformas, fraude), "datos_personales" (teléfonos, ' +
-      'direcciones, redes sociales o datos que identifiquen a alguien), ' +
-      '"suplantacion" (hacerse pasar por otra persona). Si no aplica ninguna, ' +
-      'devuelve {"categorias": []}.';
+      'Eres el moderador de ECCO, una app de notas de voz anónimas entre ' +
+      'desconocidos. Analiza el SIGNIFICADO y la INTENCIÓN del mensaje (no ' +
+      'listas de palabras sueltas) y decide qué categorías de la política ' +
+      'incumple. Categorías posibles:' +
+      DESCRIPCION_CATEGORIAS +
+      '\nResponde SOLO con un objeto JSON {"categorias": [...]} usando ' +
+      'EXACTAMENTE esas claves. Si el mensaje es seguro, devuelve ' +
+      '{"categorias": []}. No añadas texto fuera del JSON.';
 
     const res = await fetch(GROQ_CHAT_URL, {
       method: 'POST',
@@ -168,32 +135,25 @@ export class ModeradorAPI implements ModeradorContenido {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: GROQ_LLM_MODEL,
+        model: GROQ_MODERATION_MODEL,
         temperature: 0,
-        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: sistema },
           { role: 'user', content: texto },
         ],
       }),
     });
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error(`clasificacion_fallo:${res.status}`);
+
     const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content ?? '{}';
-    let parsed: { categorias?: unknown };
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      return [];
-    }
-    const permitidas: CategoriaModeracion[] = [
-      CAT.SPAM_ESTAFA,
-      CAT.DATOS_PERSONALES,
-      CAT.SUPLANTACION,
-    ];
-    const arr = Array.isArray(parsed.categorias) ? parsed.categorias : [];
-    return arr.filter((x): x is CategoriaModeracion =>
-      permitidas.includes(x as CategoriaModeracion),
+    const content = (data?.choices?.[0]?.message?.content ?? '').toString();
+    const parsed = extraerJSON(content);
+    if (!parsed || !Array.isArray(parsed.categorias)) return null;
+
+    const todas = Object.values(CAT) as string[];
+    return (parsed.categorias as unknown[]).filter(
+      (x): x is CategoriaModeracion =>
+        typeof x === 'string' && todas.includes(x),
     );
   }
 }
