@@ -3,6 +3,7 @@ import {
   type GestureResponderEvent,
   type LayoutChangeEvent,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import Animated, {
@@ -15,12 +16,19 @@ import Svg, { Circle, Line, Rect } from 'react-native-svg';
 
 import { COUNTRIES, type Country, nearestCountry } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
-import { colors, radius } from '@/theme';
+import { colors, fonts, radius } from '@/theme';
 
 type Props = {
   selected: string | null; // nombre del país seleccionado
   onSelect: (c: Country) => void;
 };
+
+// Países de referencia siempre etiquetados, para que la gente se ubique
+// (uno por zona del mundo, sin saturar el mapa).
+const ANCHORS = new Set([
+  'US', 'CA', 'MX', 'BR', 'AR', 'ES', 'GB', 'DE', 'RU',
+  'NG', 'ZA', 'EG', 'IN', 'CN', 'JP', 'AU',
+]);
 
 // Proyección equirectangular: lng/lat ⇄ píxel dentro de un lienzo W×H (W=2H).
 const lngToX = (lng: number, w: number) => ((lng + 180) / 360) * w;
@@ -114,16 +122,43 @@ export function WorldMapPicker({ selected, onSelect }: Props) {
             })}
           </Svg>
 
-          {/* Anillo pulsante sobre el país elegido */}
-          {sel && (
-            <Animated.View
+          {/* Etiquetas de países de referencia (orientación) */}
+          {COUNTRIES.filter(
+            (c) => ANCHORS.has(c.code) && c.code !== sel?.code
+          ).map((c) => (
+            <Text
+              key={`lbl-${c.code}`}
               pointerEvents="none"
+              numberOfLines={1}
               style={[
-                styles.ring,
-                { left: selX - 14, top: selY - 14 },
-                ringStyle,
+                styles.anchorLabel,
+                { left: lngToX(c.lng, w) - 40, top: latToY(c.lat, h) + 4 },
               ]}
-            />
+            >
+              {c.name}
+            </Text>
+          ))}
+
+          {/* Anillo pulsante + nombre del país elegido */}
+          {sel && (
+            <>
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.ring,
+                  { left: selX - 14, top: selY - 14 },
+                  ringStyle,
+                ]}
+              />
+              <View
+                pointerEvents="none"
+                style={[styles.selLabel, { left: selX - 60, top: selY - 26 }]}
+              >
+                <Text style={styles.selLabelText} numberOfLines={1}>
+                  {sel.flag} {sel.name}
+                </Text>
+              </View>
+            </>
           )}
         </>
       )}
@@ -147,5 +182,28 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderColor: colors.emberBright,
+  },
+  anchorLabel: {
+    position: 'absolute',
+    width: 80,
+    textAlign: 'center',
+    fontFamily: fonts.labelRegular,
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  selLabel: {
+    position: 'absolute',
+    width: 120,
+    alignItems: 'center',
+  },
+  selLabelText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
 });
