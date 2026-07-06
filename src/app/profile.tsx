@@ -21,7 +21,13 @@ import { type Country, flagFor } from '@/constants/countries';
 import { deleteMyData, getAccountEmail, linkAccount } from '@/lib/account';
 import { getApproxLocation } from '@/lib/location';
 import { enableDailyReminder } from '@/lib/notifications';
-import { getMyProfile, saveProfile, UsernameTakenError } from '@/lib/profile';
+import {
+  getMyProfile,
+  saveProfile,
+  setVoiceAiConsent,
+  UsernameTakenError,
+} from '@/lib/profile';
+import { shareReferral } from '@/lib/referral';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
@@ -44,6 +50,8 @@ export default function ProfileScreen() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [reminderMsg, setReminderMsg] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [bonus, setBonus] = useState(0);
+  const [consentAi, setConsentAi] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -54,6 +62,8 @@ export default function ProfileScreen() {
         setCountry(p?.country ?? null);
         setRegion(p?.region ?? null);
         setIsAdmin(p?.rol === 'admin');
+        setBonus(p?.bonus_credits ?? 0);
+        setConsentAi(p?.consent_voice_ai ?? false);
         setAccountEmail(email);
         setLoaded(true);
       })
@@ -109,6 +119,12 @@ export default function ProfileScreen() {
     } finally {
       setLocating(false);
     }
+  };
+
+  const toggleConsent = async () => {
+    const next = !consentAi;
+    setConsentAi(next);
+    await setVoiceAiConsent(next).catch(() => {});
   };
 
   const save = async () => {
@@ -195,6 +211,19 @@ export default function ProfileScreen() {
                 onPress={useMyLocation}
               />
 
+              {/* Invitar */}
+              <Text style={styles.sectionLabel}>invita y gana</Text>
+              <Text style={styles.accountInfo}>
+                Cada persona que entre con tu enlace os da una{' '}
+                <Text style={styles.bonusHi}>voz extra</Text> a los dos.
+                {bonus > 0
+                  ? ` Tienes ${bonus} ${bonus === 1 ? 'voz extra' : 'voces extra'}.`
+                  : ''}
+              </Text>
+              <View style={styles.mt}>
+                <GhostButton label="Compartir mi enlace 🔗" onPress={shareReferral} />
+              </View>
+
               {/* Cuenta */}
               <Text style={styles.sectionLabel}>tu cuenta</Text>
               {accountEmail ? (
@@ -238,6 +267,23 @@ export default function ProfileScreen() {
                   </View>
                 </View>
               )}
+
+              {/* Privacidad de voz */}
+              <Text style={styles.sectionLabel}>privacidad de tu voz</Text>
+              <Pressable
+                onPress={toggleConsent}
+                style={({ pressed }) => [styles.consentRow, pressed && styles.pressed]}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: consentAi }}
+              >
+                <View style={[styles.checkbox, consentAi && styles.checkboxOn]}>
+                  {consentAi && <Text style={styles.checkboxMark}>✓</Text>}
+                </View>
+                <Text style={styles.consentText}>
+                  Permito que mis voces, de forma anónima, ayuden a mejorar
+                  tecnología de voz. Puedo retirarlo cuando quiera.
+                </Text>
+              </Pressable>
 
               {/* Más */}
               <Text style={styles.sectionLabel}>más</Text>
@@ -369,6 +415,42 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     color: colors.textSecondary,
+  },
+  bonusHi: {
+    fontFamily: fonts.bodyBold,
+    color: colors.emberBright,
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  consentText: {
+    flex: 1,
+    fontFamily: fonts.labelRegular,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.textSecondary,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOn: {
+    backgroundColor: colors.ember,
+    borderColor: colors.ember,
+  },
+  checkboxMark: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: '#ffffff',
   },
   linkRow: {
     paddingVertical: spacing.md,

@@ -7,6 +7,8 @@ export type Profile = {
   country: string | null;
   region: string | null;
   rol: string;
+  bonus_credits: number;
+  consent_voice_ai: boolean;
 };
 
 /** Perfil del usuario actual, o null si aún no lo ha creado. */
@@ -14,11 +16,17 @@ export async function getMyProfile(): Promise<Profile | null> {
   const user = await ensureSession();
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, country, region, rol')
+    .select('id, username, country, region, rol, bonus_credits, consent_voice_ai')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
   return data ?? null;
+}
+
+/** Fija el consentimiento (opt-in) para uso de la voz anonimizada en IA. */
+export async function setVoiceAiConsent(value: boolean): Promise<void> {
+  await ensureSession();
+  await supabase.rpc('set_voice_ai_consent', { p_value: value });
 }
 
 export class UsernameTakenError extends Error {

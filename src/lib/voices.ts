@@ -2,6 +2,7 @@ import { decode as decodeBase64 } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
+import { track } from './analytics';
 import { getDeviceId } from './device';
 import { logError } from './log';
 import { getMyProfile } from './profile';
@@ -65,6 +66,7 @@ export type Voice = {
 export async function markVoiceHeard(voiceId: string): Promise<void> {
   await ensureSession();
   await supabase.rpc('mark_heard', { p_voice: voiceId });
+  track('voice_heard', { voiceId });
 }
 
 function extFromType(type: string) {
@@ -128,6 +130,7 @@ export async function uploadVoice(uri: string, durationMs: number) {
   // Dispara la MODERACIÓN PREVIA (server-side). No bloquea el envío: la voz
   // queda 'pendiente' hasta que la Edge Function la apruebe/rechace.
   if (insertedId) {
+    track('voice_sent', { durationMs: Math.round(durationMs) });
     supabase.functions
       .invoke('moderar-audio', { body: { audioId: insertedId } })
       .catch((e) => logError('moderar-audio.invoke', e));
@@ -162,7 +165,7 @@ export async function remoderarPendientes(): Promise<void> {
  */
 export async function getCredits(): Promise<number> {
   const user = await ensureSession();
-  const [sent, claimed] = await Promise.all([
+  const [sent, claimed, prof] = await Promise.all([
     supabase
       .from('voices')
       .select('id', { count: 'exact', head: true })
@@ -171,8 +174,14 @@ export async function getCredits(): Promise<number> {
       .from('voices')
       .select('id', { count: 'exact', head: true })
       .eq('claimed_by', user.id),
+    supabase
+      .from('profiles')
+      .select('bonus_credits')
+      .eq('id', user.id)
+      .maybeSingle(),
   ]);
-  return (sent.count ?? 0) - (claimed.count ?? 0);
+  const bonus = prof.data?.bonus_credits ?? 0;
+  return (sent.count ?? 0) + bonus - (claimed.count ?? 0);
 }
 
 /**
@@ -200,6 +209,7 @@ export async function claimVoice(): Promise<Voice | null> {
   // PostgREST lo serializa como una fila con TODOS los campos a null. La
   // detectamos por la ausencia de id para no tratarla como una voz real.
   if (!row || !row.id) return null;
+  track('voice_claimed', { voiceId: row.id });
 
   const { data: sender } = await supabase
     .from('profiles')
@@ -347,4 +357,5 @@ export async function addReaction(voiceId: string, emoji: string) {
       { voice_id: voiceId, user_id: user.id, emoji },
       { onConflict: 'voice_id,user_id' }
     );
+  track('reaction', { emoji });
 }

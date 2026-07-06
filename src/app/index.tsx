@@ -12,6 +12,7 @@ import {
 } from '@/components/StreakCelebration';
 import { Waveform } from '@/components/Waveform';
 import { getNewActivityCount } from '@/lib/activity';
+import { track } from '@/lib/analytics';
 import { haptics } from '@/lib/haptics';
 import { logError } from '@/lib/log';
 import { getMyProfile } from '@/lib/profile';
@@ -49,6 +50,7 @@ export default function Home() {
             return;
           }
           setUsername(profile.username);
+          track('app_open');
           registerPushToken().catch(() => {});
           // Red de seguridad: reintenta moderar tus voces que se hayan
           // quedado 'pendiente' (p. ej. si falló la invocación inicial).

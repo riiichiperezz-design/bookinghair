@@ -19,6 +19,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BrandLoader } from '@/components/BrandLoader';
 import { ensureReminderScheduled } from '@/lib/notifications';
+import { captureRefFromUrl } from '@/lib/referral';
 import { ensureSession } from '@/lib/session';
 import { colors } from '@/theme';
 
@@ -42,8 +43,10 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  // Calienta la sesión anónima y reprograma el recordatorio diario.
+  // Calienta la sesión anónima, reprograma el recordatorio y captura un posible
+  // código de invitación (?ref=) de la URL para canjearlo tras el alta.
   useEffect(() => {
+    captureRefFromUrl();
     ensureSession().catch(() => {});
     ensureReminderScheduled().catch(() => {});
   }, []);

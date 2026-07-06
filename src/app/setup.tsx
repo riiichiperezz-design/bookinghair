@@ -17,7 +17,8 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { WorldMapPicker } from '@/components/WorldMapPicker';
 import { type Country, detectCountry, flagFor } from '@/constants/countries';
 import { getApproxLocation } from '@/lib/location';
-import { saveProfile, UsernameTakenError } from '@/lib/profile';
+import { saveProfile, setVoiceAiConsent, UsernameTakenError } from '@/lib/profile';
+import { redeemPendingReferral } from '@/lib/referral';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
@@ -29,6 +30,7 @@ export default function SetupScreen() {
   const [region, setRegion] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const [over17, setOver17] = useState(false);
+  const [consentAi, setConsentAi] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +70,8 @@ export default function SetupScreen() {
     setError(null);
     try {
       await saveProfile(username, country, region);
+      await setVoiceAiConsent(consentAi);
+      redeemPendingReferral().catch(() => {});
       router.replace('/intro');
     } catch (e) {
       if (e instanceof UsernameTakenError) {
@@ -162,6 +166,25 @@ export default function SetupScreen() {
                 Tengo 17 años o más y entiendo que recibiré voces de desconocidos.
               </Text>
             </Pressable>
+
+            {/* Consentimiento opcional para uso de la voz en IA (opt-in). */}
+            <Pressable
+              onPress={() => setConsentAi((v) => !v)}
+              style={({ pressed }) => [styles.ageRow, pressed && styles.pressed]}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: consentAi }}
+              accessibilityLabel="Permito que mi voz anonimizada se use para mejorar IA de voz"
+            >
+              <View style={[styles.checkbox, consentAi && styles.checkboxOn]}>
+                {consentAi && <Text style={styles.checkboxMark}>✓</Text>}
+              </View>
+              <Text style={styles.ageText}>
+                <Text style={styles.optional}>Opcional. </Text>
+                Permito que mis voces, de forma anónima, ayuden a mejorar
+                tecnología de voz. Puedo retirarlo cuando quiera.
+              </Text>
+            </Pressable>
+
             <PrimaryButton
               label={saving ? 'Guardando…' : 'Entrar a ecco'}
               onPress={submit}
@@ -317,5 +340,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     color: colors.textSecondary,
+  },
+  optional: {
+    fontFamily: fonts.labelBold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
 });
