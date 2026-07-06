@@ -312,6 +312,17 @@ export default function ProfileScreen() {
                   <Text style={styles.linkText}>Panel de moderación 🛡️</Text>
                 </Pressable>
               )}
+              {isAdmin && (
+                <Pressable
+                  onPress={() => router.push('/metrics')}
+                  style={({ pressed }) => [
+                    styles.linkRow,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={styles.linkText}>Métricas de retención 📊</Text>
+                </Pressable>
+              )}
               <Pressable
                 onPress={() => router.push('/legal')}
                 style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}

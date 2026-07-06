@@ -26,6 +26,28 @@ export async function isAdmin(): Promise<boolean> {
   return data === true;
 }
 
+export type MetricasSerie = { dia: string; activos: number; enviadas: number };
+export type Metricas = {
+  usuarios: number;
+  dau: number;
+  wau: number;
+  mau: number;
+  enviadas_hoy: number;
+  enviadas_7d: number;
+  reclamadas_7d: number;
+  reacciones_7d: number;
+  pct_envia_7d: number;
+  serie: MetricasSerie[];
+};
+
+/** KPIs de retención (solo admin). */
+export async function fetchMetrics(): Promise<Metricas | null> {
+  const { data, error } = await supabase.rpc('admin_metrics');
+  if (error) throw error;
+  if (!data || Object.keys(data).length === 0) return null;
+  return data as Metricas;
+}
+
 /** Cola de revisión humana (solo admin). */
 export async function fetchCola(): Promise<ColaItem[]> {
   const { data, error } = await supabase.rpc('admin_queue');
