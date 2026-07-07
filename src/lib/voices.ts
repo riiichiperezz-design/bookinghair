@@ -7,6 +7,7 @@ import { getDeviceId } from './device';
 import { logError } from './log';
 import { getMyProfile } from './profile';
 import { ensureSession } from './session';
+import type { Song } from './spotify';
 import { supabase } from './supabase';
 
 const BUCKET = 'voices';
@@ -60,6 +61,7 @@ export type Voice = {
   audioUrl: string;
   username: string | null;
   heardAt: string | null;
+  song: Song | null;
 };
 
 /** Marca una voz como escuchada (escucha única). Idempotente en el servidor. */
@@ -80,7 +82,11 @@ function extFromType(type: string) {
 }
 
 /** Sube la grabación a Storage y crea la fila en `voices` (entra al pool). */
-export async function uploadVoice(uri: string, durationMs: number) {
+export async function uploadVoice(
+  uri: string,
+  durationMs: number,
+  song?: Song | null
+) {
   const user = await ensureSession();
   const profile = await getMyProfile();
 
@@ -106,7 +112,7 @@ export async function uploadVoice(uri: string, durationMs: number) {
   if (upErr) throw upErr;
 
   // La voz nace 'pendiente' (default de la columna estado_moderacion).
-  const base = {
+  const core = {
     sender_id: user.id,
     audio_path: path,
     duration_ms: Math.round(durationMs),
@@ -114,15 +120,22 @@ export async function uploadVoice(uri: string, durationMs: number) {
   };
   const deviceId = await getDeviceId();
 
+  // Inserta con las columnas nuevas y degrada si aún no se han aplicado sus
+  // migraciones (0013 song, 0008 device_id): song → device_id → core.
   let ins = await supabase
     .from('voices')
-    .insert({ ...base, device_id: deviceId })
+    .insert({ ...core, device_id: deviceId, song: song ?? null })
     .select('id')
     .single();
-  // Compatibilidad: si aún no se ha aplicado la migración 0008 (sin columna
-  // device_id), reintenta sin ella.
+  if (ins.error && /song/.test(ins.error.message)) {
+    ins = await supabase
+      .from('voices')
+      .insert({ ...core, device_id: deviceId })
+      .select('id')
+      .single();
+  }
   if (ins.error && /device_id/.test(ins.error.message)) {
-    ins = await supabase.from('voices').insert(base).select('id').single();
+    ins = await supabase.from('voices').insert(core).select('id').single();
   }
   if (ins.error) throw ins.error;
   const insertedId = ins.data?.id;
@@ -202,6 +215,7 @@ export async function claimVoice(): Promise<Voice | null> {
         duration_ms: number;
         country: string | null;
         created_at: string;
+        song: Song | null;
       }
     | null
     | undefined;
@@ -226,6 +240,7 @@ export async function claimVoice(): Promise<Voice | null> {
     country: row.country ?? sender?.country ?? null,
     username: sender?.username ?? null,
     heardAt: null,
+    song: row.song ?? null,
     audioUrl: await signedUrl(row.audio_path),
   };
 }
@@ -235,7 +250,7 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
   const user = await ensureSession();
   const { data, error } = await supabase
     .from('voices')
-    .select('id, sender_id, audio_path, duration_ms, country, created_at, claimed_at, heard_at')
+    .select('id, sender_id, audio_path, duration_ms, country, created_at, claimed_at, heard_at, song')
     .eq('claimed_by', user.id)
     .order('claimed_at', { ascending: false })
     .limit(100);
@@ -263,6 +278,7 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
       country: r.country ?? prof?.country ?? null,
       username: prof?.username ?? null,
       heardAt: r.heard_at ?? null,
+      song: (r.song as Song | null) ?? null,
       audioUrl: urls.get(r.audio_path) ?? '',
     };
   });

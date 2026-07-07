@@ -18,8 +18,10 @@ import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, InboxIcon } from '@/components/icons';
 import { RecordButton } from '@/components/RecordButton';
+import { SongPicker } from '@/components/SongPicker';
 import { haptics } from '@/lib/haptics';
 import { inviteFriends } from '@/lib/share';
+import type { Song } from '@/lib/spotify';
 import { uploadVoice } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
@@ -94,6 +96,7 @@ function Recorder() {
 
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [recordedMs, setRecordedMs] = useState(0);
+  const [song, setSong] = useState<Song | null>(null);
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -160,13 +163,14 @@ function Recorder() {
   const reRecord = () => {
     setRecordedUri(null);
     setRecordedMs(0);
+    setSong(null);
   };
 
   const send = async () => {
     if (!recordedUri || sending) return;
     setSending(true);
     try {
-      await uploadVoice(recordedUri, recordedMs);
+      await uploadVoice(recordedUri, recordedMs, song);
       haptics.success();
       setSent(true);
     } catch (e) {
@@ -223,6 +227,9 @@ function Recorder() {
               Muy corta. Graba algo un poco más largo.
             </Text>
           )}
+          <View style={styles.songWrap}>
+            <SongPicker value={song} onChange={setSong} />
+          </View>
           <View style={styles.spacer} />
           <PrimaryButton
             label={sending ? 'Enviando…' : 'Enviar voz'}
@@ -303,6 +310,9 @@ const styles = StyleSheet.create({
   },
   bottom: {
     paddingBottom: spacing.xl,
+  },
+  songWrap: {
+    marginTop: spacing.lg,
   },
   spacer: {
     height: spacing.lg,

@@ -26,7 +26,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy moderar-audio
+      - name: Deploy edge functions
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
             echo "::error::Falta el secreto SUPABASE_ACCESS_TOKEN. Añádelo en"
@@ -35,3 +35,4 @@ jobs:
             exit 1
           fi
           supabase functions deploy moderar-audio --project-ref "$PROJECT_REF"
+          supabase functions deploy spotify-buscar --project-ref "$PROJECT_REF"

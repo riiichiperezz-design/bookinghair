@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -221,6 +223,35 @@ function VoiceInner() {
           playing={playing}
           onTogglePlay={togglePlay}
         />
+        {voice?.song && (
+          <Pressable
+            onPress={() => {
+              haptics.tap();
+              if (voice.song?.url) Linking.openURL(voice.song.url).catch(() => {});
+            }}
+            style={({ pressed }) => [styles.songCard, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Abrir ${voice.song.title} en Spotify`}
+          >
+            {voice.song.image ? (
+              <Image source={{ uri: voice.song.image }} style={styles.songCover} />
+            ) : (
+              <View style={[styles.songCover, styles.songCoverFallback]}>
+                <Text style={styles.songNote}>♪</Text>
+              </View>
+            )}
+            <View style={styles.songInfo}>
+              <Text style={styles.songKicker}>te recomienda escuchar</Text>
+              <Text style={styles.songTitle} numberOfLines={1}>
+                {voice.song.title}
+              </Text>
+              <Text style={styles.songArtist} numberOfLines={1}>
+                {voice.song.artist}
+              </Text>
+            </View>
+            <Text style={styles.songOpen}>Abrir ▸</Text>
+          </Pressable>
+        )}
       </Animated.View>
 
       <Animated.View
@@ -347,6 +378,48 @@ const styles = StyleSheet.create({
   },
   playerWrap: {
     paddingTop: spacing.xxl,
+  },
+  songCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+  },
+  songCover: { width: 48, height: 48, borderRadius: 6 },
+  songCoverFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceElevated,
+  },
+  songNote: { color: colors.textMuted, fontSize: 20 },
+  songInfo: { flex: 1 },
+  songKicker: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 10.5,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    color: colors.textMuted,
+  },
+  songTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginTop: 1,
+  },
+  songArtist: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  songOpen: {
+    fontFamily: fonts.labelBold,
+    fontSize: 12,
+    color: colors.emberBright,
   },
   footer: {
     marginTop: 'auto',
