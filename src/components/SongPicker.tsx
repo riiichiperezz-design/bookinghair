@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 
+import { EqualizerIcon } from '@/components/icons';
 import { searchTracks, type Song, toSong } from '@/lib/spotify';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -57,7 +58,7 @@ export function SongPicker({ value, onChange }: Props) {
           <Image source={{ uri: value.image }} style={styles.cover} />
         ) : (
           <View style={[styles.cover, styles.coverFallback]}>
-            <Text style={styles.note}>♪</Text>
+            <EqualizerIcon size={16} color={colors.textMuted} />
           </View>
         )}
         <View style={styles.selInfo}>
@@ -85,8 +86,19 @@ export function SongPicker({ value, onChange }: Props) {
       <Pressable
         onPress={() => setOpen(true)}
         style={({ pressed }) => [styles.addBtn, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Añadir una canción a tu voz"
       >
-        <Text style={styles.addText}>🎵 acompañar con una canción</Text>
+        <View style={styles.addIcon}>
+          <EqualizerIcon size={18} color={colors.emberBright} />
+        </View>
+        <View style={styles.addInfo}>
+          <Text style={styles.addTitle}>Añadir una canción</Text>
+          <Text style={styles.addSub}>
+            recomienda un tema a quien reciba tu voz
+          </Text>
+        </View>
+        <Text style={styles.addPlus}>+</Text>
       </Pressable>
     );
   }
@@ -123,7 +135,7 @@ export function SongPicker({ value, onChange }: Props) {
             <Image source={{ uri: r.image }} style={styles.resCover} />
           ) : (
             <View style={[styles.resCover, styles.coverFallback]}>
-              <Text style={styles.note}>♪</Text>
+              <EqualizerIcon size={16} color={colors.textMuted} />
             </View>
           )}
           <View style={styles.selInfo}>
@@ -143,18 +155,42 @@ export function SongPicker({ value, onChange }: Props) {
 const styles = StyleSheet.create({
   wrap: { gap: spacing.xs },
   addBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    gap: spacing.md,
+    padding: spacing.sm,
+    paddingRight: spacing.lg,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    borderStyle: 'dashed',
     backgroundColor: colors.surface,
   },
-  addText: {
-    fontFamily: fonts.bodyMedium,
+  addIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addInfo: { flex: 1 },
+  addTitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
+  },
+  addSub: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 11.5,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  addPlus: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    color: colors.emberBright,
   },
   pressed: { opacity: 0.7 },
   inputRow: {

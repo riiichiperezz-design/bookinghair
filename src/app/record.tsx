@@ -75,8 +75,8 @@ function IdleBody({
 }) {
   return (
     <View style={styles.center}>
-      <Text style={styles.kicker}>para alguien, sin decir quién</Text>
-      <Text style={styles.title}>Suelta una voz</Text>
+      <Text style={styles.kicker}>una al día · para alguien, sin decir quién</Text>
+      <Text style={styles.title}>Suelta tu voz de hoy</Text>
       <View style={styles.recordWrap}>
         <RecordButton recording={recording} onPress={onToggle ?? (() => {})} />
       </View>

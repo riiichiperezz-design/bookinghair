@@ -150,3 +150,23 @@ export function LockIcon({ size = 13, color = colors.textPrimary }: IconProps) {
     </Svg>
   );
 }
+
+/** Ecualizador de audio (canción/recomendación musical). */
+export function EqualizerIcon({ size = 20, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x={4} y={9} width={3} height={8} rx={1.5} fill={color} />
+      <Rect x={10.5} y={4} width={3} height={16} rx={1.5} fill={color} />
+      <Rect x={17} y={7} width={3} height={11} rx={1.5} fill={color} />
+    </Svg>
+  );
+}
+
+/** Flecha de reproducción externa (abrir en otra app). */
+export function ExternalPlayIcon({ size = 16, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M8 5.5v13l11-6.5-11-6.5Z" fill={color} />
+    </Svg>
+  );
+}

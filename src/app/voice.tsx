@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Linking,
   Pressable,
@@ -18,7 +17,13 @@ import { AudioPlayerCard } from '@/components/AudioPlayerCard';
 import { Avatar } from '@/components/Avatar';
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
-import { ArrowLeftIcon, FlagIcon, LockIcon, MicIcon } from '@/components/icons';
+import {
+  ArrowLeftIcon,
+  EqualizerIcon,
+  ExternalPlayIcon,
+  FlagIcon,
+  MicIcon,
+} from '@/components/icons';
 import { ReactionsRow } from '@/components/ReactionsRow';
 import { RetentionCard } from '@/components/RetentionCard';
 import { flagFor } from '@/constants/countries';
@@ -120,16 +125,26 @@ function VoiceInner() {
     }
   };
 
-  const handleReport = async () => {
+  // Reportar/bloquear con motivo y confirmación (funciona igual en web y móvil).
+  const [reportState, setReportState] = useState<'closed' | 'open' | 'done'>(
+    'closed'
+  );
+  const [alsoBlock, setAlsoBlock] = useState(true);
+
+  const sendReport = async (reason: string) => {
     if (!voice) return;
     haptics.tap();
-    await reportVoice(voice.id).catch(() => {});
-    router.replace('/');
+    player.pause();
+    await reportVoice(voice.id, reason).catch(() => {});
+    if (alsoBlock) await blockSender(voice.senderId).catch(() => {});
+    haptics.success();
+    setReportState('done');
   };
 
   const handleBlock = async () => {
     if (!voice) return;
     haptics.tap();
+    player.pause();
     await blockSender(voice.senderId).catch(() => {});
     router.replace('/');
   };
@@ -158,9 +173,9 @@ function VoiceInner() {
     const copy = {
       needSend: {
         emoji: '🎙️',
-        title: 'Manda una voz para recibir',
+        title: 'Suelta tu voz de hoy',
         subtitle:
-          'En ecco das para recibir: suelta un audio al mundo y te llegará el de un desconocido.',
+          'El ritual es diario: mandas una voz al mundo y recibes la de un desconocido. Hoy aún no has soltado la tuya.',
       },
       error: {
         emoji: '😕',
@@ -197,7 +212,7 @@ function VoiceInner() {
     <View style={styles.flexBody}>
       <Animated.View style={styles.reveal} entering={FadeInDown.duration(450)}>
         <Avatar name={username ?? '?'} size={92} />
-        <Text style={styles.kicker}>una voz acaba de llegar</Text>
+        <Text style={styles.kicker}>una voz acaba de llegar · solo se escucha una vez</Text>
         <Text style={styles.title}>
           {username ? `@${username} tiene algo que decirte` : 'Alguien tiene algo que decirte'}
         </Text>
@@ -231,25 +246,33 @@ function VoiceInner() {
             }}
             style={({ pressed }) => [styles.songCard, pressed && styles.pressed]}
             accessibilityRole="button"
-            accessibilityLabel={`Abrir ${voice.song.title} en Spotify`}
+            accessibilityLabel={`Escuchar ${voice.song.title} en Spotify`}
           >
-            {voice.song.image ? (
-              <Image source={{ uri: voice.song.image }} style={styles.songCover} />
-            ) : (
-              <View style={[styles.songCover, styles.songCoverFallback]}>
-                <Text style={styles.songNote}>♪</Text>
-              </View>
-            )}
-            <View style={styles.songInfo}>
-              <Text style={styles.songKicker}>te recomienda escuchar</Text>
-              <Text style={styles.songTitle} numberOfLines={1}>
-                {voice.song.title}
-              </Text>
-              <Text style={styles.songArtist} numberOfLines={1}>
-                {voice.song.artist}
-              </Text>
+            <View style={styles.songHeader}>
+              <EqualizerIcon size={13} color={colors.emberBright} />
+              <Text style={styles.songKicker}>canción recomendada</Text>
             </View>
-            <Text style={styles.songOpen}>Abrir ▸</Text>
+            <View style={styles.songBody}>
+              {voice.song.image ? (
+                <Image source={{ uri: voice.song.image }} style={styles.songCover} />
+              ) : (
+                <View style={[styles.songCover, styles.songCoverFallback]}>
+                  <EqualizerIcon size={18} color={colors.textMuted} />
+                </View>
+              )}
+              <View style={styles.songInfo}>
+                <Text style={styles.songTitle} numberOfLines={1}>
+                  {voice.song.title}
+                </Text>
+                <Text style={styles.songArtist} numberOfLines={1}>
+                  {voice.song.artist}
+                </Text>
+              </View>
+              <View style={styles.songPlay}>
+                <ExternalPlayIcon size={13} color="#0d1a12" />
+                <Text style={styles.songPlayText}>Escuchar</Text>
+              </View>
+            </View>
           </Pressable>
         )}
       </Animated.View>
@@ -263,28 +286,12 @@ function VoiceInner() {
             if (voice) addReaction(voice.id, emoji).catch(() => {});
           }}
         />
-        <Pressable
-          onPress={() =>
-            Alert.alert(
-              'Contestar es premium',
-              'Responder con tu voz será una función de pago que llegará pronto. Por ahora, reacciona con un emoji.'
-            )
-          }
-          style={({ pressed }) => [styles.reply, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Contestarle (premium, próximamente)"
-        >
-          <MicIcon size={18} color={colors.emberBright} />
-          <Text style={styles.replyText}>Contestarle</Text>
-          <View style={styles.premiumTag}>
-            <LockIcon size={11} color={colors.textOnEmber} />
-            <Text style={styles.premiumText}>premium</Text>
-          </View>
-        </Pressable>
-
         <View style={styles.modRow}>
           <Pressable
-            onPress={handleReport}
+            onPress={() => {
+              haptics.tap();
+              setReportState('open');
+            }}
             hitSlop={8}
             style={styles.modBtn}
             accessibilityRole="button"
@@ -305,6 +312,70 @@ function VoiceInner() {
           </Pressable>
         </View>
       </Animated.View>
+
+      {/* Hoja de reporte con motivo (overlay propio: web + móvil) */}
+      {reportState !== 'closed' && (
+        <View style={styles.sheetOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill as object}
+            onPress={() => reportState === 'open' && setReportState('closed')}
+            accessibilityLabel="Cerrar"
+          />
+          <Animated.View style={styles.sheet} entering={FadeInDown.duration(220)}>
+            {reportState === 'open' ? (
+              <>
+                <Text style={styles.sheetTitle}>¿Qué pasa con esta voz?</Text>
+                <Text style={styles.sheetSub}>
+                  La revisamos y no volverás a escucharla.
+                </Text>
+                {[
+                  ['contenido_sexual', 'Contenido sexual'],
+                  ['odio_acoso', 'Odio, amenazas o acoso'],
+                  ['spam_estafa', 'Spam o estafa'],
+                  ['otro', 'Otro motivo'],
+                ].map(([key, label]) => (
+                  <Pressable
+                    key={key}
+                    onPress={() => sendReport(key)}
+                    style={({ pressed }) => [
+                      styles.sheetOption,
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.sheetOptionText}>{label}</Text>
+                  </Pressable>
+                ))}
+                <Pressable
+                  onPress={() => setAlsoBlock((v) => !v)}
+                  style={styles.sheetBlockRow}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: alsoBlock }}
+                >
+                  <View style={[styles.sheetCheck, alsoBlock && styles.sheetCheckOn]}>
+                    {alsoBlock && <Text style={styles.sheetCheckMark}>✓</Text>}
+                  </View>
+                  <Text style={styles.sheetBlockText}>
+                    Bloquear también a esta persona
+                  </Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Text style={styles.sheetTitle}>Gracias por avisar</Text>
+                <Text style={styles.sheetSub}>
+                  Nuestro equipo la revisará. No volverás a escuchar esta voz
+                  {alsoBlock ? ' ni nada de esta persona' : ''}.
+                </Text>
+                <PrimaryButton
+                  label="Volver al inicio"
+                  onPress={() => router.replace('/')}
+                />
+              </>
+            )}
+          </Animated.View>
+        </View>
+      )}
     </View>
   );
 }
@@ -380,46 +451,137 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
   },
   songCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
     marginTop: spacing.lg,
-    padding: spacing.sm,
+    padding: spacing.md,
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
   },
-  songCover: { width: 48, height: 48, borderRadius: 6 },
+  songHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  songKicker: {
+    fontFamily: fonts.labelBold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: colors.textMuted,
+  },
+  songBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  songCover: { width: 46, height: 46, borderRadius: 8 },
   songCoverFallback: {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceElevated,
   },
-  songNote: { color: colors.textMuted, fontSize: 20 },
   songInfo: { flex: 1 },
-  songKicker: {
-    fontFamily: fonts.labelRegular,
-    fontSize: 10.5,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    color: colors.textMuted,
-  },
   songTitle: {
     fontFamily: fonts.bodyBold,
-    fontSize: 14,
+    fontSize: 14.5,
     color: colors.textPrimary,
-    marginTop: 1,
   },
   songArtist: {
     fontFamily: fonts.labelRegular,
     fontSize: 12,
     color: colors.textSecondary,
+    marginTop: 1,
   },
-  songOpen: {
+  songPlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#1DB954',
+    borderRadius: radius.pill,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+  },
+  songPlayText: {
     fontFamily: fonts.labelBold,
     fontSize: 12,
-    color: colors.emberBright,
+    color: '#0d1a12',
+  },
+  sheetOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(10,4,2,0.72)',
+  },
+  sheet: {
+    backgroundColor: colors.surfaceElevated,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    paddingBottom: spacing.xxl,
+    gap: spacing.sm,
+  },
+  sheetTitle: {
+    fontFamily: fonts.display,
+    fontSize: 21,
+    letterSpacing: -0.6,
+    color: colors.textPrimary,
+  },
+  sheetSub: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  sheetOption: {
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  sheetOptionText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  sheetBlockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  sheetCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetCheckOn: {
+    backgroundColor: colors.ember,
+    borderColor: colors.ember,
+  },
+  sheetCheckMark: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    color: '#ffffff',
+  },
+  sheetBlockText: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   footer: {
     marginTop: 'auto',
@@ -428,37 +590,6 @@ const styles = StyleSheet.create({
   },
   bottom: {
     paddingBottom: spacing.xl,
-  },
-  reply: {
-    height: 50,
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ember,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  replyText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: '#FF9460',
-  },
-  premiumTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.ember,
-    borderRadius: radius.pill,
-    paddingVertical: 2,
-    paddingHorizontal: 7,
-  },
-  premiumText: {
-    fontFamily: fonts.labelBold,
-    fontSize: 9,
-    letterSpacing: 0.5,
-    color: colors.textOnEmber,
-    textTransform: 'uppercase',
   },
   modRow: {
     flexDirection: 'row',

@@ -173,28 +173,33 @@ export async function remoderarPendientes(): Promise<void> {
 }
 
 /**
- * Créditos para recibir = voces enviadas − voces reclamadas.
- * Mandas una para poder abrir una (intercambio).
+ * Ritual diario: 1 si hoy todavía puedes recibir una voz (has mandado la tuya
+ * hoy, o tienes voces extra de invitar), 0 si ya recibiste la de hoy o aún no
+ * has mandado nada. El servidor (claim_voice) es quien manda de verdad.
  */
 export async function getCredits(): Promise<number> {
   const user = await ensureSession();
-  const [sent, claimed, prof] = await Promise.all([
+  const hoy = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`;
+  const [sentToday, claimedToday, prof] = await Promise.all([
     supabase
       .from('voices')
       .select('id', { count: 'exact', head: true })
-      .eq('sender_id', user.id),
+      .eq('sender_id', user.id)
+      .gte('created_at', hoy),
     supabase
       .from('voices')
       .select('id', { count: 'exact', head: true })
-      .eq('claimed_by', user.id),
+      .eq('claimed_by', user.id)
+      .gte('claimed_at', hoy),
     supabase
       .from('profiles')
       .select('bonus_credits')
       .eq('id', user.id)
       .maybeSingle(),
   ]);
+  if ((claimedToday.count ?? 0) > 0) return 0;
   const bonus = prof.data?.bonus_credits ?? 0;
-  return (sent.count ?? 0) + bonus - (claimed.count ?? 0);
+  return (sentToday.count ?? 0) > 0 || bonus > 0 ? 1 : 0;
 }
 
 /**

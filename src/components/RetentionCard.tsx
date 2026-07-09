@@ -8,12 +8,18 @@ import { enableDailyReminder } from '@/lib/notifications';
 import { getStreakCount } from '@/lib/streak';
 import { colors, fonts, radius, spacing } from '@/theme';
 
-/** Horas que faltan para la próxima medianoche local (nueva tanda de voces). */
+/**
+ * Horas hasta la próxima medianoche UTC: es cuando el servidor resetea el
+ * ritual diario (1 voz enviada / 1 recibida), así la cuenta atrás es real.
+ */
 function hoursToMidnight(): number {
   const now = new Date();
-  const next = new Date(now);
-  next.setHours(24, 0, 0, 0);
-  return Math.max(1, Math.round((next.getTime() - now.getTime()) / 3_600_000));
+  const next = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + 1
+  );
+  return Math.max(1, Math.round((next - now.getTime()) / 3_600_000));
 }
 
 /**
