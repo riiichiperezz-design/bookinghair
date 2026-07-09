@@ -8,8 +8,14 @@ const SPOTIFY_CLIENT_ID = '6110f99bb823451d935bc61724caba54';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const SEARCH_URL = 'https://api.spotify.com/v1/search';
 
+// CORS restringido a los orígenes web propios (nativo no manda Origin).
+const ALLOWED_ORIGINS = [
+  'https://riiichiperezz-design.github.io',
+  'http://localhost:8081', // desarrollo (expo start)
+];
+
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -20,6 +26,32 @@ function json(body: unknown, status: number): Response {
     status,
     headers: { 'Content-Type': 'application/json', ...CORS },
   });
+}
+
+function withCors(req: Request, res: Response): Response {
+  const origin = req.headers.get('origin') ?? '';
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.headers.set('Access-Control-Allow-Origin', origin);
+  }
+  res.headers.set('Vary', 'Origin');
+  return res;
+}
+
+// Límite de frecuencia sencillo por llamador (memoria del worker): sube el
+// listón frente a scripts que quieran quemar la cuota de la API.
+const RATE_LIMIT = 20; // peticiones/min
+const hits = new Map<string, { count: number; since: number }>();
+
+function throttled(req: Request): boolean {
+  const key = req.headers.get('authorization') ?? 'anon';
+  const now = Date.now();
+  const h = hits.get(key);
+  if (!h || now - h.since > 60_000) {
+    hits.set(key, { count: 1, since: now });
+    return false;
+  }
+  h.count += 1;
+  return h.count > RATE_LIMIT;
 }
 
 // Cache del token de app en memoria del worker (se renueva al caducar).
@@ -58,9 +90,12 @@ type Track = {
   preview: string | null;
 };
 
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req: Request) => withCors(req, await handler(req)));
+
+async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'metodo_no_permitido' }, 405);
+  if (throttled(req)) return json({ error: 'demasiadas_peticiones', tracks: [] }, 429);
 
   const body = await req.json().catch(() => null);
   const q: unknown = body?.q;
@@ -99,4 +134,4 @@ Deno.serve(async (req: Request) => {
   });
 
   return json({ tracks }, 200);
-});
+}

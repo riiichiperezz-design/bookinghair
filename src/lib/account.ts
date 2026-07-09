@@ -23,6 +23,16 @@ export async function linkAccount(email: string, password: string) {
  */
 export async function deleteMyData() {
   const user = await ensureSession();
+  // Primero el AUDIO en Storage (GDPR): recogemos las rutas antes de borrar
+  // las filas, porque la política de lectura depende de ellas.
+  const { data: rows } = await supabase
+    .from('voices')
+    .select('audio_path')
+    .eq('sender_id', user.id);
+  const paths = (rows ?? []).map((r) => r.audio_path).filter(Boolean);
+  if (paths.length > 0) {
+    await supabase.storage.from('voices').remove(paths);
+  }
   await supabase.from('reactions').delete().eq('user_id', user.id);
   await supabase.from('voices').delete().eq('sender_id', user.id);
   await supabase.from('profiles').delete().eq('id', user.id);

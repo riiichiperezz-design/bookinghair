@@ -19,10 +19,11 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, InboxIcon } from '@/components/icons';
 import { RecordButton } from '@/components/RecordButton';
 import { SongPicker } from '@/components/SongPicker';
+import { hoursToUtcMidnight } from '@/lib/day';
 import { haptics } from '@/lib/haptics';
 import { inviteFriends } from '@/lib/share';
 import type { Song } from '@/lib/spotify';
-import { uploadVoice } from '@/lib/voices';
+import { sentToday, uploadVoice } from '@/lib/voices';
 import { colors, fonts, spacing } from '@/theme';
 
 const MAX_MS = 30_000; // duración máxima de una voz
@@ -99,6 +100,19 @@ function Recorder() {
   const [song, setSong] = useState<Song | null>(null);
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [todayDone, setTodayDone] = useState(false);
+
+  // Ritual diario: si ya soltaste tu voz de hoy, avisa antes de grabar en vano
+  // (el servidor lo bloquea igualmente al enviar).
+  useEffect(() => {
+    let active = true;
+    sentToday()
+      .then((done) => active && setTodayDone(done))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const player = useAudioPlayer(recordedUri ?? undefined);
   const playerStatus = useAudioPlayerStatus(player);
@@ -182,6 +196,34 @@ function Recorder() {
       setSending(false);
     }
   };
+
+  // Ya soltaste la de hoy (y no vienes de enviarla ahora mismo).
+  if (todayDone && !sent && !recordedUri && !recorderState.isRecording) {
+    const horas = hoursToUtcMidnight();
+    return (
+      <View style={styles.center}>
+        <Animated.Text style={styles.bigEmoji} entering={ZoomIn.duration(420)}>
+          🌍
+        </Animated.Text>
+        <Text style={styles.title}>Tu voz de hoy ya está fuera</Text>
+        <Text style={styles.subtitle}>
+          Una al día: así cada voz vale. Podrás soltar otra en ~{horas}{' '}
+          {horas === 1 ? 'hora' : 'horas'}.
+        </Text>
+        <View style={styles.sentActions}>
+          <PrimaryButton
+            label="Abrir mis voces"
+            icon={<InboxIcon size={20} color="#ffffff" />}
+            onPress={() => router.replace('/voice')}
+          />
+          <GhostButton
+            label="volver al inicio"
+            onPress={() => router.replace('/')}
+          />
+        </View>
+      </View>
+    );
+  }
 
   if (sent) {
     return (

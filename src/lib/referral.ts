@@ -68,19 +68,52 @@ export async function redeemPendingReferral(): Promise<boolean> {
   }
 }
 
-/** Comparte tu enlace de invitación por la hoja del sistema. */
-export async function shareReferral(): Promise<void> {
+export type ShareResult = 'shared' | 'copied' | 'failed';
+
+/**
+ * Comparte tu enlace de invitación. En web, si el navegador no tiene hoja de
+ * compartir (escritorio), copia el mensaje al portapapeles.
+ */
+export async function shareReferral(): Promise<ShareResult> {
   haptics.tap();
   const code = await getMyReferralCode();
   const link = code ? referralLink(code) : BASE_URL;
+  const message =
+    'Te mando una voz en ecco 🔥 Mandas un audio y recibes el de un ' +
+    'desconocido del mundo. Entra con mi enlace y los dos ganamos una ' +
+    `voz extra 👉 ${link}`;
+
+  if (Platform.OS === 'web') {
+    type WebNav = {
+      share?: (d: { text: string }) => Promise<void>;
+      clipboard?: { writeText: (t: string) => Promise<void> };
+    };
+    const nav: WebNav | null =
+      typeof navigator !== 'undefined' ? (navigator as WebNav) : null;
+    if (nav?.share) {
+      try {
+        await nav.share({ text: message });
+        return 'shared';
+      } catch {
+        return 'shared'; // cancelado por el usuario: no hacemos nada más
+      }
+    }
+    if (nav?.clipboard) {
+      try {
+        await nav.clipboard.writeText(message);
+        haptics.success();
+        return 'copied';
+      } catch {
+        return 'failed';
+      }
+    }
+    return 'failed';
+  }
+
   try {
-    await Share.share({
-      message:
-        'Te mando una voz en ecco 🔥 Mandas un audio y recibes el de un ' +
-        'desconocido del mundo. Entra con mi enlace y los dos ganamos una ' +
-        `voz extra 👉 ${link}`,
-    });
+    await Share.share({ message });
+    return 'shared';
   } catch {
-    // cancelado
+    return 'failed';
   }
 }

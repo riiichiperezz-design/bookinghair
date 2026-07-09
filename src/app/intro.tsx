@@ -10,18 +10,23 @@ import { colors, fonts, radius, spacing } from '@/theme';
 const STEPS = [
   {
     emoji: '🎙️',
-    title: 'Suelta una voz',
-    text: 'Graba un audio y lánzalo al mundo, sin decir quién eres.',
+    title: 'Una voz al día',
+    text: 'Cada día grabas un audio (máx. 30 s) y lo sueltas al mundo, sin decir quién eres.',
   },
   {
-    emoji: '🎁',
-    title: 'Das para recibir',
-    text: 'Por cada voz que mandas, te llega la de un total desconocido.',
+    emoji: '🌍',
+    title: 'Recibes otra a cambio',
+    text: 'Te llega la voz de un desconocido de cualquier parte del mundo. Solo para ti.',
   },
   {
     emoji: '🔥',
-    title: 'Única, para ti',
-    text: 'Cada audio se entrega a una sola persona. Reacciona con un emoji.',
+    title: 'Solo se escucha una vez',
+    text: 'Cada voz se entrega a una persona y desaparece al oírla. Reacciona con un emoji.',
+  },
+  {
+    emoji: '🎧',
+    title: 'Con banda sonora',
+    text: 'Si quieres, acompaña tu voz con una canción para quien la reciba.',
   },
 ];
 

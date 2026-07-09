@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GhostButton, PrimaryButton } from '@/components/buttons';
+import { CountrySearch } from '@/components/CountrySearch';
 import { EmberBackground } from '@/components/EmberBackground';
 import { WorldMapPicker } from '@/components/WorldMapPicker';
 import { type Country, detectCountry, flagFor } from '@/constants/countries';
@@ -135,6 +136,7 @@ export default function SetupScreen() {
               ubicación exacta.
             </Text>
             <WorldMapPicker selected={country} onSelect={pickCountry} />
+            <CountrySearch onSelect={pickCountry} />
 
             <View style={styles.placeRow}>
               <Text style={styles.placeLabel} numberOfLines={1}>

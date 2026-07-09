@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 import { track } from './analytics';
+import { utcDayStart } from './day';
 import { getDeviceId } from './device';
 import { logError } from './log';
 import { getMyProfile } from './profile';
@@ -14,10 +15,10 @@ const BUCKET = 'voices';
 const SIGNED_TTL = 60 * 60; // 1 h
 
 /** URL firmada para reproducir un audio del bucket privado. */
-async function signedUrl(path: string): Promise<string> {
+async function signedUrl(path: string, ttl: number = SIGNED_TTL): Promise<string> {
   const { data } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(path, SIGNED_TTL);
+    .createSignedUrl(path, ttl);
   return data?.signedUrl ?? '';
 }
 
@@ -177,9 +178,20 @@ export async function remoderarPendientes(): Promise<void> {
  * hoy, o tienes voces extra de invitar), 0 si ya recibiste la de hoy o aún no
  * has mandado nada. El servidor (claim_voice) es quien manda de verdad.
  */
+/** ¿Ya has soltado tu voz de hoy? (día UTC, igual que el servidor) */
+export async function sentToday(): Promise<boolean> {
+  const user = await ensureSession();
+  const { count } = await supabase
+    .from('voices')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender_id', user.id)
+    .gte('created_at', utcDayStart());
+  return (count ?? 0) > 0;
+}
+
 export async function getCredits(): Promise<number> {
   const user = await ensureSession();
-  const hoy = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`;
+  const hoy = utcDayStart();
   const [sentToday, claimedToday, prof] = await Promise.all([
     supabase
       .from('voices')
@@ -246,7 +258,8 @@ export async function claimVoice(): Promise<Voice | null> {
     username: sender?.username ?? null,
     heardAt: null,
     song: row.song ?? null,
-    audioUrl: await signedUrl(row.audio_path),
+    // TTL corto: con escucha única no tiene sentido una URL de 1 h.
+    audioUrl: await signedUrl(row.audio_path, 600),
   };
 }
 

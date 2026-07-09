@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GhostButton, PrimaryButton } from '@/components/buttons';
+import { CountrySearch } from '@/components/CountrySearch';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon } from '@/components/icons';
 import { WorldMapPicker } from '@/components/WorldMapPicker';
@@ -52,6 +53,13 @@ export default function ProfileScreen() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [bonus, setBonus] = useState(0);
   const [consentAi, setConsentAi] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState<string | null>(null);
+
+  const invite = async () => {
+    const r = await shareReferral();
+    if (r === 'copied') setInviteMsg('Enlace copiado ✓ Pégalo donde quieras.');
+    else if (r === 'failed') setInviteMsg('No se pudo compartir. Inténtalo otra vez.');
+  };
 
   useEffect(() => {
     let active = true;
@@ -199,6 +207,7 @@ export default function ProfileScreen() {
 
               <Text style={styles.sectionLabel}>¿de dónde eres?</Text>
               <WorldMapPicker selected={country} onSelect={pickCountry} />
+              <CountrySearch onSelect={pickCountry} />
               <View style={styles.placeRow}>
                 <Text style={styles.placeLabel} numberOfLines={1}>
                   {country
@@ -221,8 +230,9 @@ export default function ProfileScreen() {
                   : ''}
               </Text>
               <View style={styles.mt}>
-                <GhostButton label="Compartir mi enlace 🔗" onPress={shareReferral} />
+                <GhostButton label="Compartir mi enlace 🔗" onPress={invite} />
               </View>
+              {inviteMsg && <Text style={styles.helper}>{inviteMsg}</Text>}
 
               {/* Cuenta */}
               <Text style={styles.sectionLabel}>tu cuenta</Text>

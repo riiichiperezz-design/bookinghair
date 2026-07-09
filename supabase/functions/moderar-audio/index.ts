@@ -8,10 +8,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { moderador } from './config.ts';
 import { POLITICA_MODERACION } from './categorias.ts';
 
-// Cabeceras CORS: la app web (GitHub Pages) invoca esta función desde el
-// navegador, que primero manda un preflight OPTIONS.
+// CORS restringido: solo los orígenes web propios (los clientes nativos no
+// mandan Origin y no lo necesitan). El preflight OPTIONS llega primero.
+const ALLOWED_ORIGINS = [
+  'https://riiichiperezz-design.github.io',
+  'http://localhost:8081', // desarrollo (expo start)
+];
+
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -24,7 +29,19 @@ function json(body: unknown, status: number): Response {
   });
 }
 
-Deno.serve(async (req: Request) => {
+/** Ajusta Allow-Origin al origen de la petición si está en la lista. */
+function withCors(req: Request, res: Response): Response {
+  const origin = req.headers.get('origin') ?? '';
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.headers.set('Access-Control-Allow-Origin', origin);
+  }
+  res.headers.set('Vary', 'Origin');
+  return res;
+}
+
+Deno.serve(async (req: Request) => withCors(req, await handler(req)));
+
+async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'metodo_no_permitido' }, 405);
 
@@ -122,4 +139,4 @@ Deno.serve(async (req: Request) => {
   }
 
   return json({ ok: true, estado }, 200);
-});
+}
