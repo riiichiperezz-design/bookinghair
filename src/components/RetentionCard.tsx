@@ -4,6 +4,7 @@ import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { GhostButton } from '@/components/buttons';
 import { haptics } from '@/lib/haptics';
+import { t } from '@/lib/i18n';
 import { enableDailyReminder } from '@/lib/notifications';
 import { getStreakCount } from '@/lib/streak';
 import { colors, fonts, radius, spacing } from '@/theme';
@@ -59,9 +60,7 @@ export function RetentionCard() {
           style={styles.streakPill}
           entering={FadeInDown.duration(380)}
         >
-          <Text style={styles.streakText}>
-            racha de {streak} {streak === 1 ? 'día' : 'días'}
-          </Text>
+          <Text style={styles.streakText}>{t('ret.streak', { n: streak })}</Text>
         </Animated.View>
       )}
 
@@ -69,36 +68,29 @@ export function RetentionCard() {
         style={styles.title}
         entering={FadeInDown.duration(420).delay(80)}
       >
-        Ya lo has oído todo por hoy
+        {t('ret.title')}
       </Animated.Text>
       <Animated.Text
         style={styles.subtitle}
         entering={FadeInDown.duration(420).delay(160)}
       >
-        Cada voz se entrega a una sola persona. Mañana habrá voces nuevas dando
-        vueltas por el mundo — y alguien estará esperando la tuya.
+        {t('ret.subtitle')}
       </Animated.Text>
 
       <Animated.View
         style={styles.nextRow}
         entering={FadeInDown.duration(420).delay(240)}
       >
-        <Text style={styles.nextText}>
-          🌙 Vuelven en ~{horas} {horas === 1 ? 'hora' : 'horas'}
-        </Text>
+        <Text style={styles.nextText}>{t('ret.back', { n: horas })}</Text>
       </Animated.View>
 
       <View style={styles.cta}>
         {reminder === 'on' ? (
-          <Text style={styles.reminderOn}>
-            ✓ Te avisaré mañana para que no pierdas la racha
-          </Text>
+          <Text style={styles.reminderOn}>{t('ret.remindOn')}</Text>
         ) : reminder === 'unavailable' ? (
-          <Text style={styles.reminderOn}>
-            Los avisos están disponibles en la app del móvil
-          </Text>
+          <Text style={styles.reminderOn}>{t('ret.remindWeb')}</Text>
         ) : (
-          <GhostButton label="🔔 avísame mañana" onPress={activar} />
+          <GhostButton label={t('ret.remindCta')} onPress={activar} />
         )}
       </View>
     </View>

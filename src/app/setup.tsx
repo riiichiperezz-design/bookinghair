@@ -17,6 +17,7 @@ import { CountrySearch } from '@/components/CountrySearch';
 import { EmberBackground } from '@/components/EmberBackground';
 import { WorldMapPicker } from '@/components/WorldMapPicker';
 import { type Country, detectCountry, flagFor } from '@/constants/countries';
+import { t } from '@/lib/i18n';
 import { getApproxLocation } from '@/lib/location';
 import { saveProfile, setVoiceAiConsent, UsernameTakenError } from '@/lib/profile';
 import { redeemPendingReferral } from '@/lib/referral';
@@ -55,7 +56,7 @@ export default function SetupScreen() {
         setCountry(loc.country.name);
         setRegion(loc.region);
       } else {
-        setError('No pudimos acceder a tu ubicación. Elígela en el mapa.');
+        setError(t('setup.locError'));
       }
     } finally {
       setLocating(false);
@@ -79,7 +80,7 @@ export default function SetupScreen() {
         setError(e.message);
       } else {
         setError(
-          e instanceof Error ? e.message : 'No se pudo guardar. Inténtalo otra vez.'
+          e instanceof Error ? e.message : t('setup.saveError')
         );
       }
     } finally {
@@ -103,9 +104,9 @@ export default function SetupScreen() {
               ECCO<Text style={styles.wordmarkDot}>.</Text>
             </Text>
 
-            <Text style={styles.title}>¿Cómo te llaman?</Text>
+            <Text style={styles.title}>{t('setup.title')}</Text>
             <Text style={styles.subtitle}>
-              Tu @usuario solo aparece cuando alguien abre tu voz.
+              {t('setup.subtitle')}
             </Text>
 
             {/* Usuario */}
@@ -116,7 +117,7 @@ export default function SetupScreen() {
                 onChangeText={(t) =>
                   setUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ''))
                 }
-                placeholder="tu_nombre"
+                placeholder={t('setup.placeholder')}
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -126,15 +127,12 @@ export default function SetupScreen() {
               />
             </View>
             <Text style={styles.helper}>
-              {error ?? 'minúsculas, números y _ · 3 a 20 caracteres'}
+              {error ?? t('setup.helper')}
             </Text>
 
             {/* De dónde eres — mapa interactivo */}
-            <Text style={styles.sectionLabel}>¿de dónde eres?</Text>
-            <Text style={styles.mapHint}>
-              Toca el mundo para situarte. Solo se comparte tu zona, nunca tu
-              ubicación exacta.
-            </Text>
+            <Text style={styles.sectionLabel}>{t('setup.where')}</Text>
+            <Text style={styles.mapHint}>{t('setup.mapHint')}</Text>
             <WorldMapPicker selected={country} onSelect={pickCountry} />
             <CountrySearch onSelect={pickCountry} />
 
@@ -142,12 +140,12 @@ export default function SetupScreen() {
               <Text style={styles.placeLabel} numberOfLines={1}>
                 {country
                   ? `${flagFor(country)} ${country}${region ? ` · ${region}` : ''}`
-                  : 'Sin elegir todavía'}
+                  : t('setup.none')}
               </Text>
             </View>
 
             <GhostButton
-              label={locating ? 'Buscando…' : '📍 usar mi ubicación'}
+              label={locating ? t('setup.locating') : t('setup.useLocation')}
               onPress={useMyLocation}
             />
           </ScrollView>
@@ -159,13 +157,13 @@ export default function SetupScreen() {
               style={({ pressed }) => [styles.ageRow, pressed && styles.pressed]}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: over17 }}
-              accessibilityLabel="Confirmo que tengo 17 años o más"
+              accessibilityLabel={t('setup.age')}
             >
               <View style={[styles.checkbox, over17 && styles.checkboxOn]}>
                 {over17 && <Text style={styles.checkboxMark}>✓</Text>}
               </View>
               <Text style={styles.ageText}>
-                Tengo 17 años o más y entiendo que recibiré voces de desconocidos.
+                {t('setup.age')}
               </Text>
             </Pressable>
 
@@ -175,27 +173,26 @@ export default function SetupScreen() {
               style={({ pressed }) => [styles.ageRow, pressed && styles.pressed]}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: consentAi }}
-              accessibilityLabel="Permito que mi voz anonimizada se use para mejorar IA de voz"
+              accessibilityLabel={t('setup.consentAi')}
             >
               <View style={[styles.checkbox, consentAi && styles.checkboxOn]}>
                 {consentAi && <Text style={styles.checkboxMark}>✓</Text>}
               </View>
               <Text style={styles.ageText}>
-                <Text style={styles.optional}>Opcional. </Text>
-                Permito que mis voces, de forma anónima, ayuden a mejorar
-                tecnología de voz. Puedo retirarlo cuando quiera.
+                <Text style={styles.optional}>{t('setup.optional')}</Text>
+                {t('setup.consentAi')}
               </Text>
             </Pressable>
 
             <PrimaryButton
-              label={saving ? 'Guardando…' : 'Entrar a ecco'}
+              label={saving ? t('setup.saving') : t('setup.enter')}
               onPress={submit}
               disabled={!canSubmit}
             />
             <Text style={styles.consent}>
-              Al entrar aceptas la{' '}
+              {t('setup.legalPre')}
               <Text style={styles.consentLink} onPress={() => router.push('/legal')}>
-                privacidad y términos
+                {t('setup.legalLink')}
               </Text>
               .
             </Text>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { COUNTRIES, type Country } from '@/constants/countries';
+import { t } from '@/lib/i18n';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 type Props = {
@@ -31,11 +32,11 @@ export function CountrySearch({ onSelect }: Props) {
       <TextInput
         value={query}
         onChangeText={setQuery}
-        placeholder="o escribe tu país…"
+        placeholder={t('country.search')}
         placeholderTextColor={colors.textMuted}
         autoCorrect={false}
         style={styles.input}
-        accessibilityLabel="Buscar país por nombre"
+        accessibilityLabel={t('country.search')}
       />
       {matches.length > 0 && (
         <View style={styles.results}>

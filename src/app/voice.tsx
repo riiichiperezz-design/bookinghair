@@ -28,6 +28,7 @@ import { ReactionsRow } from '@/components/ReactionsRow';
 import { RetentionCard } from '@/components/RetentionCard';
 import { flagFor } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
+import { t } from '@/lib/i18n';
 import { blockSender, reportVoice } from '@/lib/moderation';
 import { inviteFriends } from '@/lib/share';
 import {
@@ -59,7 +60,7 @@ export default function VoiceScreen() {
             onPress={() => router.back()}
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel="Volver"
+            accessibilityLabel={t('voice.back')}
           >
             <ArrowLeftIcon size={22} color={colors.textPrimary} />
           </Pressable>
@@ -163,7 +164,7 @@ function VoiceInner() {
       <View style={styles.flexBody}>
         <RetentionCard />
         <View style={styles.bottom}>
-          <GhostButton label="Invitar a amigos" onPress={inviteFriends} />
+          <GhostButton label={t('voice.invite')} onPress={inviteFriends} />
         </View>
       </View>
     );
@@ -173,14 +174,13 @@ function VoiceInner() {
     const copy = {
       needSend: {
         emoji: '🎙️',
-        title: 'Suelta tu voz de hoy',
-        subtitle:
-          'El ritual es diario: mandas una voz al mundo y recibes la de un desconocido. Hoy aún no has soltado la tuya.',
+        title: t('voice.needSendTitle'),
+        subtitle: t('voice.needSendSub'),
       },
       error: {
         emoji: '😕',
-        title: 'Algo salió mal',
-        subtitle: 'Revisa tu conexión e inténtalo otra vez.',
+        title: t('voice.errorTitle'),
+        subtitle: t('voice.errorSub'),
       },
     }[status];
 
@@ -193,12 +193,12 @@ function VoiceInner() {
         </Centered>
         <View style={styles.bottom}>
           <PrimaryButton
-            label="Soltar una voz"
+            label={t('voice.drop')}
             icon={<MicIcon size={20} color="#ffffff" />}
             onPress={() => router.replace('/record')}
           />
           <GhostButton
-            label="volver al inicio"
+            label={t('record.backHome')}
             onPress={() => router.replace('/')}
           />
         </View>
@@ -212,19 +212,19 @@ function VoiceInner() {
     <View style={styles.flexBody}>
       <Animated.View style={styles.reveal} entering={FadeInDown.duration(450)}>
         <Avatar name={username ?? '?'} size={92} />
-        <Text style={styles.kicker}>una voz acaba de llegar · solo se escucha una vez</Text>
+        <Text style={styles.kicker}>{t('voice.kicker')}</Text>
         <Text style={styles.title}>
-          {username ? `@${username} tiene algo que decirte` : 'Alguien tiene algo que decirte'}
+          {username ? t('voice.titleUser', { u: username }) : t('voice.titleAnon')}
         </Text>
         {voice?.country ? (
           <View style={styles.countryPill}>
             <Text style={styles.countryText}>
-              desde {voice.country} {flagFor(voice.country)}
+              {t('voice.from', { c: voice.country })} {flagFor(voice.country)}
             </Text>
           </View>
         ) : (
           <View style={styles.countryPill}>
-            <Text style={styles.countryText}>anónima · sin lugar</Text>
+            <Text style={styles.countryText}>{t('voice.noPlace')}</Text>
           </View>
         )}
       </Animated.View>
@@ -246,11 +246,11 @@ function VoiceInner() {
             }}
             style={({ pressed }) => [styles.songCard, pressed && styles.pressed]}
             accessibilityRole="button"
-            accessibilityLabel={`Escuchar ${voice.song.title} en Spotify`}
+            accessibilityLabel={`${t('voice.listen')} · ${voice.song.title}`}
           >
             <View style={styles.songHeader}>
               <EqualizerIcon size={13} color={colors.emberBright} />
-              <Text style={styles.songKicker}>canción recomendada</Text>
+              <Text style={styles.songKicker}>{t('voice.songKicker')}</Text>
             </View>
             <View style={styles.songBody}>
               {voice.song.image ? (
@@ -270,7 +270,7 @@ function VoiceInner() {
               </View>
               <View style={styles.songPlay}>
                 <ExternalPlayIcon size={13} color="#0d1a12" />
-                <Text style={styles.songPlayText}>Escuchar</Text>
+                <Text style={styles.songPlayText}>{t('voice.listen')}</Text>
               </View>
             </View>
           </Pressable>
@@ -295,10 +295,10 @@ function VoiceInner() {
             hitSlop={8}
             style={styles.modBtn}
             accessibilityRole="button"
-            accessibilityLabel="Reportar voz"
+            accessibilityLabel={t('voice.reportA11y')}
           >
             <FlagIcon size={13} color={colors.textMuted} />
-            <Text style={styles.modText}>reportar</Text>
+            <Text style={styles.modText}>{t('voice.report')}</Text>
           </Pressable>
           <Text style={styles.modSep}>·</Text>
           <Pressable
@@ -306,9 +306,9 @@ function VoiceInner() {
             hitSlop={8}
             style={styles.modBtn}
             accessibilityRole="button"
-            accessibilityLabel="Bloquear a esta persona"
+            accessibilityLabel={t('voice.blockA11y')}
           >
-            <Text style={styles.modText}>bloquear</Text>
+            <Text style={styles.modText}>{t('voice.block')}</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -319,20 +319,18 @@ function VoiceInner() {
           <Pressable
             style={StyleSheet.absoluteFill as object}
             onPress={() => reportState === 'open' && setReportState('closed')}
-            accessibilityLabel="Cerrar"
+            accessibilityLabel={t('song.close')}
           />
           <Animated.View style={styles.sheet} entering={FadeInDown.duration(220)}>
             {reportState === 'open' ? (
               <>
-                <Text style={styles.sheetTitle}>¿Qué pasa con esta voz?</Text>
-                <Text style={styles.sheetSub}>
-                  La revisamos y no volverás a escucharla.
-                </Text>
+                <Text style={styles.sheetTitle}>{t('voice.sheetTitle')}</Text>
+                <Text style={styles.sheetSub}>{t('voice.sheetSub')}</Text>
                 {[
-                  ['contenido_sexual', 'Contenido sexual'],
-                  ['odio_acoso', 'Odio, amenazas o acoso'],
-                  ['spam_estafa', 'Spam o estafa'],
-                  ['otro', 'Otro motivo'],
+                  ['contenido_sexual', t('voice.r1')],
+                  ['odio_acoso', t('voice.r2')],
+                  ['spam_estafa', t('voice.r3')],
+                  ['otro', t('voice.r4')],
                 ].map(([key, label]) => (
                   <Pressable
                     key={key}
@@ -355,20 +353,17 @@ function VoiceInner() {
                   <View style={[styles.sheetCheck, alsoBlock && styles.sheetCheckOn]}>
                     {alsoBlock && <Text style={styles.sheetCheckMark}>✓</Text>}
                   </View>
-                  <Text style={styles.sheetBlockText}>
-                    Bloquear también a esta persona
-                  </Text>
+                  <Text style={styles.sheetBlockText}>{t('voice.alsoBlock')}</Text>
                 </Pressable>
               </>
             ) : (
               <>
-                <Text style={styles.sheetTitle}>Gracias por avisar</Text>
+                <Text style={styles.sheetTitle}>{t('voice.thanksTitle')}</Text>
                 <Text style={styles.sheetSub}>
-                  Nuestro equipo la revisará. No volverás a escuchar esta voz
-                  {alsoBlock ? ' ni nada de esta persona' : ''}.
+                  {alsoBlock ? t('voice.thanksBlock') : t('voice.thanks')}
                 </Text>
                 <PrimaryButton
-                  label="Volver al inicio"
+                  label={t('voice.home')}
                   onPress={() => router.replace('/')}
                 />
               </>

@@ -4,30 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
+import { t } from '@/lib/i18n';
 import { enableDailyReminder } from '@/lib/notifications';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 const STEPS = [
-  {
-    emoji: '🎙️',
-    title: 'Una voz al día',
-    text: 'Cada día grabas un audio (máx. 30 s) y lo sueltas al mundo, sin decir quién eres.',
-  },
-  {
-    emoji: '🌍',
-    title: 'Recibes otra a cambio',
-    text: 'Te llega la voz de un desconocido de cualquier parte del mundo. Solo para ti.',
-  },
-  {
-    emoji: '🔥',
-    title: 'Solo se escucha una vez',
-    text: 'Cada voz se entrega a una persona y desaparece al oírla. Reacciona con un emoji.',
-  },
-  {
-    emoji: '🎧',
-    title: 'Con banda sonora',
-    text: 'Si quieres, acompaña tu voz con una canción para quien la reciba.',
-  },
+  { emoji: '🎙️', title: t('intro.s1t'), text: t('intro.s1x') },
+  { emoji: '🌍', title: t('intro.s2t'), text: t('intro.s2x') },
+  { emoji: '🔥', title: t('intro.s3t'), text: t('intro.s3x') },
+  { emoji: '🎧', title: t('intro.s4t'), text: t('intro.s4x') },
 ];
 
 export default function IntroScreen() {
@@ -39,7 +24,7 @@ export default function IntroScreen() {
           <Text style={styles.wordmark}>
             ECCO<Text style={styles.wordmarkDot}>.</Text>
           </Text>
-          <Text style={styles.title}>Así funciona</Text>
+          <Text style={styles.title}>{t('intro.how')}</Text>
 
           <View style={styles.steps}>
             {STEPS.map((s) => (
@@ -58,7 +43,7 @@ export default function IntroScreen() {
 
         <View style={styles.footer}>
           <PrimaryButton
-            label="Empezar"
+            label={t('intro.start')}
             onPress={async () => {
               // Prime de permiso con contexto: avisos para no perder la racha.
               await enableDailyReminder();

@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,7 +10,8 @@ import {
   View,
 } from 'react-native';
 
-import { EqualizerIcon } from '@/components/icons';
+import { EqualizerIcon, PauseIcon, PlayIcon } from '@/components/icons';
+import { t } from '@/lib/i18n';
 import { searchTracks, type Song, toSong } from '@/lib/spotify';
 import { colors, fonts, radius, spacing } from '@/theme';
 
@@ -28,22 +30,53 @@ export function SongPicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const onType = (t: string) => {
-    setQuery(t);
+  // Pre-escucha de 30 s (si Spotify da preview para ese tema).
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const preview = useAudioPlayer(previewUrl ?? undefined);
+  const previewStatus = useAudioPlayerStatus(preview);
+
+  useEffect(() => {
+    if (!previewUrl) return;
+    preview.seekTo(0);
+    preview.play();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewUrl]);
+
+  const stopPreview = () => {
+    if (previewStatus.playing) preview.pause();
+    setPreviewUrl(null);
+  };
+
+  const togglePreview = (r: Result) => {
+    if (!r.preview) return;
+    if (previewUrl === r.preview) {
+      if (previewStatus.playing) preview.pause();
+      else {
+        preview.seekTo(0);
+        preview.play();
+      }
+    } else {
+      setPreviewUrl(r.preview);
+    }
+  };
+
+  const onType = (text: string) => {
+    setQuery(text);
     if (timer.current) clearTimeout(timer.current);
-    if (t.trim().length < 2) {
+    if (text.trim().length < 2) {
       setResults([]);
       return;
     }
     setLoading(true);
     timer.current = setTimeout(async () => {
-      const r = await searchTracks(t);
+      const r = await searchTracks(text);
       setResults(r);
       setLoading(false);
     }, 350);
   };
 
   const pick = (r: Result) => {
+    stopPreview();
     onChange(toSong(r));
     setOpen(false);
     setQuery('');
@@ -73,9 +106,9 @@ export function SongPicker({ value, onChange }: Props) {
           onPress={() => onChange(null)}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Quitar canción"
+          accessibilityLabel={t('song.remove')}
         >
-          <Text style={styles.remove}>quitar</Text>
+          <Text style={styles.remove}>{t('song.remove')}</Text>
         </Pressable>
       </View>
     );
@@ -87,16 +120,14 @@ export function SongPicker({ value, onChange }: Props) {
         onPress={() => setOpen(true)}
         style={({ pressed }) => [styles.addBtn, pressed && styles.pressed]}
         accessibilityRole="button"
-        accessibilityLabel="Añadir una canción a tu voz"
+        accessibilityLabel={t('song.add')}
       >
         <View style={styles.addIcon}>
           <EqualizerIcon size={18} color={colors.emberBright} />
         </View>
         <View style={styles.addInfo}>
-          <Text style={styles.addTitle}>Añadir una canción</Text>
-          <Text style={styles.addSub}>
-            recomienda un tema a quien reciba tu voz
-          </Text>
+          <Text style={styles.addTitle}>{t('song.add')}</Text>
+          <Text style={styles.addSub}>{t('song.addSub')}</Text>
         </View>
         <Text style={styles.addPlus}>+</Text>
       </Pressable>
@@ -109,7 +140,7 @@ export function SongPicker({ value, onChange }: Props) {
         <TextInput
           value={query}
           onChangeText={onType}
-          placeholder="busca una canción o artista…"
+          placeholder={t('song.search')}
           placeholderTextColor={colors.textMuted}
           autoFocus
           autoCorrect={false}
@@ -119,8 +150,14 @@ export function SongPicker({ value, onChange }: Props) {
         {loading ? (
           <ActivityIndicator color={colors.ember} size="small" />
         ) : (
-          <Pressable onPress={() => setOpen(false)} hitSlop={8}>
-            <Text style={styles.remove}>cerrar</Text>
+          <Pressable
+            onPress={() => {
+              stopPreview();
+              setOpen(false);
+            }}
+            hitSlop={8}
+          >
+            <Text style={styles.remove}>{t('song.close')}</Text>
           </Pressable>
         )}
       </View>
@@ -146,6 +183,21 @@ export function SongPicker({ value, onChange }: Props) {
               {r.artist}
             </Text>
           </View>
+          {r.preview != null && (
+            <Pressable
+              onPress={() => togglePreview(r)}
+              hitSlop={8}
+              style={({ pressed }) => [styles.prevBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={t('song.previewA11y')}
+            >
+              {previewUrl === r.preview && previewStatus.playing ? (
+                <PauseIcon size={14} color={colors.textPrimary} />
+              ) : (
+                <PlayIcon size={14} color={colors.textPrimary} />
+              )}
+            </Pressable>
+          )}
         </Pressable>
       ))}
     </View>
@@ -219,6 +271,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   resCover: { width: 40, height: 40, borderRadius: 6 },
+  prevBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   selected: {
     flexDirection: 'row',
     alignItems: 'center',

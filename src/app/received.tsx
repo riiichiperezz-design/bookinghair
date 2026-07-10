@@ -17,6 +17,7 @@ import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, LockIcon, PauseIcon, PlayIcon } from '@/components/icons';
 import { flagFor } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
+import { t } from '@/lib/i18n';
 import {
   fetchReceivedVoices,
   fetchSentVoices,
@@ -33,9 +34,11 @@ function formatMs(ms: number) {
 }
 
 function sentStatusLabel(v: SentVoice): string {
-  if (v.estado === 'aprobado') return v.claimed ? 'escuchada' : 'esperando';
-  if (v.estado === 'rechazado') return 'no aprobada';
-  return 'en revisión';
+  if (v.estado === 'aprobado') {
+    return v.claimed ? t('rcv.stHeard') : t('rcv.stWaiting');
+  }
+  if (v.estado === 'rechazado') return t('rcv.stRejected');
+  return t('rcv.stReview');
 }
 
 function sentDotColor(v: SentVoice): string {
@@ -64,18 +67,18 @@ export default function ReceivedScreen() {
           >
             <ArrowLeftIcon size={22} color={colors.textPrimary} />
           </Pressable>
-          <Text style={styles.headerTitle}>tus voces</Text>
+          <Text style={styles.headerTitle}>{t('rcv.header')}</Text>
           <View style={styles.headerSpacer} />
         </View>
 
         <View style={styles.tabs}>
           <TabButton
-            label="Recibidas"
+            label={t('rcv.tabIn')}
             active={tab === 'received'}
             onPress={() => setTab('received')}
           />
           <TabButton
-            label="Enviadas"
+            label={t('rcv.tabOut')}
             active={tab === 'sent'}
             onPress={() => setTab('sent')}
           />
@@ -201,14 +204,10 @@ function Lists({ tab }: { tab: Tab }) {
       <View style={styles.center}>
         <Text style={styles.bigEmoji}>{tab === 'received' ? '📭' : '📡'}</Text>
         <Text style={styles.emptyTitle}>
-          {tab === 'received'
-            ? 'Aún no has recibido voces'
-            : 'Aún no has enviado nada'}
+          {tab === 'received' ? t('rcv.emptyInT') : t('rcv.emptyOutT')}
         </Text>
         <Text style={styles.emptySubtitle}>
-          {tab === 'received'
-            ? 'Manda una al mundo y reclama la de un desconocido.'
-            : 'Suelta tu primera voz al mundo.'}
+          {tab === 'received' ? t('rcv.emptyInS') : t('rcv.emptyOutS')}
         </Text>
       </View>
     );
@@ -236,10 +235,10 @@ function Lists({ tab }: { tab: Tab }) {
               <Avatar name={item.username ?? '?'} size={44} />
               <View style={styles.itemInfo}>
                 <Text style={styles.itemName} numberOfLines={1}>
-                  {item.username ? `@${item.username}` : 'anónima'}
+                  {item.username ? `@${item.username}` : t('rcv.anon')}
                 </Text>
                 <Text style={styles.itemMeta} numberOfLines={1}>
-                  {heard ? '🔒 ya escuchada · ' : ''}
+                  {heard ? t('rcv.heard') : ''}
                   {item.country
                     ? `${flagFor(item.country)} ${item.country} · ${formatMs(item.duration_ms)}`
                     : formatMs(item.duration_ms)}
@@ -280,7 +279,7 @@ function Lists({ tab }: { tab: Tab }) {
         <View style={styles.item}>
           <View style={styles.itemInfo}>
             <Text style={styles.itemName} numberOfLines={1}>
-              Tu voz · {formatMs(item.duration_ms)}
+              {t('rcv.yourVoice')} · {formatMs(item.duration_ms)}
             </Text>
             <View style={styles.sentMetaRow}>
               <Text

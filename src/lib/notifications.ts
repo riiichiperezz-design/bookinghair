@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { t } from './i18n';
 import { getItem, setItem } from './storage';
 
 const ENABLED_KEY = 'ecco.notifications.enabled.v1';
@@ -34,8 +35,8 @@ export async function enableDailyReminder(): Promise<boolean> {
     await N.cancelAllScheduledNotificationsAsync();
     await N.scheduleNotificationAsync({
       content: {
-        title: '🔥 Tu racha te espera',
-        body: 'Alguien del mundo quiere oírte. Suelta una voz en ecco.',
+        title: t('notif.title'),
+        body: t('notif.body'),
       },
       trigger: {
         type: N.SchedulableTriggerInputTypes.DAILY,

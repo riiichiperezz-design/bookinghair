@@ -20,6 +20,7 @@ import { ArrowLeftIcon } from '@/components/icons';
 import { WorldMapPicker } from '@/components/WorldMapPicker';
 import { type Country, flagFor } from '@/constants/countries';
 import { deleteMyData, getAccountEmail, linkAccount } from '@/lib/account';
+import { t } from '@/lib/i18n';
 import { getApproxLocation } from '@/lib/location';
 import { enableDailyReminder } from '@/lib/notifications';
 import {
@@ -57,8 +58,8 @@ export default function ProfileScreen() {
 
   const invite = async () => {
     const r = await shareReferral();
-    if (r === 'copied') setInviteMsg('Enlace copiado ✓ Pégalo donde quieras.');
-    else if (r === 'failed') setInviteMsg('No se pudo compartir. Inténtalo otra vez.');
+    if (r === 'copied') setInviteMsg(t('prof.copied'));
+    else if (r === 'failed') setInviteMsg(t('prof.shareFail'));
   };
 
   useEffect(() => {
@@ -93,7 +94,7 @@ export default function ProfileScreen() {
       setAccountEmail(linkEmail.trim());
       setLinkPassword('');
     } catch (e) {
-      setLinkErr(e instanceof Error ? e.message : 'No se pudo vincular.');
+      setLinkErr(e instanceof Error ? e.message : t('prof.linkFail'));
     } finally {
       setLinking(false);
     }
@@ -147,7 +148,7 @@ export default function ProfileScreen() {
         setError(e.message);
       } else {
         setError(
-          e instanceof Error ? e.message : 'No se pudo guardar. Inténtalo otra vez.'
+          e instanceof Error ? e.message : t('setup.saveError')
         );
       }
     } finally {
@@ -167,7 +168,7 @@ export default function ProfileScreen() {
           >
             <ArrowLeftIcon size={22} color={colors.textPrimary} />
           </Pressable>
-          <Text style={styles.headerTitle}>editar perfil</Text>
+          <Text style={styles.headerTitle}>{t('prof.header')}</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -192,7 +193,7 @@ export default function ProfileScreen() {
                   onChangeText={(t) =>
                     setUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ''))
                   }
-                  placeholder="tu_nombre"
+                  placeholder={t('setup.placeholder')}
                   placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -202,55 +203,50 @@ export default function ProfileScreen() {
                 />
               </View>
               <Text style={styles.helper}>
-                {error ?? 'minúsculas, números y _ · 3 a 20 caracteres'}
+                {error ?? t('setup.helper')}
               </Text>
 
-              <Text style={styles.sectionLabel}>¿de dónde eres?</Text>
+              <Text style={styles.sectionLabel}>{t('setup.where')}</Text>
               <WorldMapPicker selected={country} onSelect={pickCountry} />
               <CountrySearch onSelect={pickCountry} />
               <View style={styles.placeRow}>
                 <Text style={styles.placeLabel} numberOfLines={1}>
                   {country
                     ? `${flagFor(country)} ${country}${region ? ` · ${region}` : ''}`
-                    : 'Sin elegir'}
+                    : t('setup.none')}
                 </Text>
               </View>
               <GhostButton
-                label={locating ? 'Buscando…' : '📍 usar mi ubicación'}
+                label={locating ? t('setup.locating') : t('setup.useLocation')}
                 onPress={useMyLocation}
               />
 
               {/* Invitar */}
-              <Text style={styles.sectionLabel}>invita y gana</Text>
+              <Text style={styles.sectionLabel}>{t('prof.invite')}</Text>
               <Text style={styles.accountInfo}>
-                Cada persona que entre con tu enlace os da una{' '}
-                <Text style={styles.bonusHi}>voz extra</Text> a los dos.
-                {bonus > 0
-                  ? ` Tienes ${bonus} ${bonus === 1 ? 'voz extra' : 'voces extra'}.`
-                  : ''}
+                {t('prof.inviteText')}
+                <Text style={styles.bonusHi}>{t('prof.bonusWord')}</Text>.
+                {bonus > 0 ? t('prof.bonusCount', { n: bonus }) : ''}
               </Text>
               <View style={styles.mt}>
-                <GhostButton label="Compartir mi enlace 🔗" onPress={invite} />
+                <GhostButton label={t('prof.share')} onPress={invite} />
               </View>
               {inviteMsg && <Text style={styles.helper}>{inviteMsg}</Text>}
 
               {/* Cuenta */}
-              <Text style={styles.sectionLabel}>tu cuenta</Text>
+              <Text style={styles.sectionLabel}>{t('prof.account')}</Text>
               {accountEmail ? (
                 <Text style={styles.accountInfo}>
-                  Guardada como {accountEmail} ✓
+                  {t('prof.accountSaved', { e: accountEmail ?? '' })}
                 </Text>
               ) : (
                 <View>
-                  <Text style={styles.accountInfo}>
-                    Solo en este dispositivo. Vincula un email para no perder tu
-                    @usuario, racha y voces si reinstalas.
-                  </Text>
+                  <Text style={styles.accountInfo}>{t('prof.accountInfo')}</Text>
                   <View style={[styles.inputRow, styles.mt]}>
                     <TextInput
                       value={linkEmail}
                       onChangeText={setLinkEmail}
-                      placeholder="email"
+                      placeholder={t('prof.email')}
                       placeholderTextColor={colors.textMuted}
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -262,7 +258,7 @@ export default function ProfileScreen() {
                     <TextInput
                       value={linkPassword}
                       onChangeText={setLinkPassword}
-                      placeholder="contraseña (mín. 6)"
+                      placeholder={t('prof.password')}
                       placeholderTextColor={colors.textMuted}
                       secureTextEntry
                       style={styles.input}
@@ -271,7 +267,7 @@ export default function ProfileScreen() {
                   {linkErr && <Text style={styles.helper}>{linkErr}</Text>}
                   <View style={styles.mt}>
                     <GhostButton
-                      label={linking ? 'Guardando…' : 'Guardar mi cuenta'}
+                      label={linking ? t('prof.saving') : t('prof.saveAccount')}
                       onPress={linkNow}
                     />
                   </View>
@@ -279,7 +275,7 @@ export default function ProfileScreen() {
               )}
 
               {/* Privacidad de voz */}
-              <Text style={styles.sectionLabel}>privacidad de tu voz</Text>
+              <Text style={styles.sectionLabel}>{t('prof.privacy')}</Text>
               <Pressable
                 onPress={toggleConsent}
                 style={({ pressed }) => [styles.consentRow, pressed && styles.pressed]}
@@ -289,26 +285,19 @@ export default function ProfileScreen() {
                 <View style={[styles.checkbox, consentAi && styles.checkboxOn]}>
                   {consentAi && <Text style={styles.checkboxMark}>✓</Text>}
                 </View>
-                <Text style={styles.consentText}>
-                  Permito que mis voces, de forma anónima, ayuden a mejorar
-                  tecnología de voz. Puedo retirarlo cuando quiera.
-                </Text>
+                <Text style={styles.consentText}>{t('setup.consentAi')}</Text>
               </Pressable>
 
               {/* Más */}
-              <Text style={styles.sectionLabel}>más</Text>
+              <Text style={styles.sectionLabel}>{t('prof.more')}</Text>
               <Pressable
                 onPress={async () => {
                   const ok = await enableDailyReminder();
-                  setReminderMsg(
-                    ok
-                      ? 'Recordatorio diario activado ✓'
-                      : 'El recordatorio solo está disponible en la app móvil.'
-                  );
+                  setReminderMsg(ok ? t('prof.reminderOn') : t('prof.reminderWeb'));
                 }}
                 style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
               >
-                <Text style={styles.linkText}>Activar recordatorio diario 🔥</Text>
+                <Text style={styles.linkText}>{t('prof.reminder')}</Text>
               </Pressable>
               {reminderMsg && <Text style={styles.helper}>{reminderMsg}</Text>}
               {isAdmin && (
@@ -319,7 +308,7 @@ export default function ProfileScreen() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.linkText}>Panel de moderación 🛡️</Text>
+                  <Text style={styles.linkText}>{t('prof.admin')}</Text>
                 </Pressable>
               )}
               {isAdmin && (
@@ -330,28 +319,28 @@ export default function ProfileScreen() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.linkText}>Métricas de retención 📊</Text>
+                  <Text style={styles.linkText}>{t('prof.metrics')}</Text>
                 </Pressable>
               )}
               <Pressable
                 onPress={() => router.push('/legal')}
                 style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
               >
-                <Text style={styles.linkText}>Privacidad y términos</Text>
+                <Text style={styles.linkText}>{t('prof.legal')}</Text>
               </Pressable>
               <Pressable
                 onPress={onDelete}
                 style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
               >
                 <Text style={styles.dangerText}>
-                  {confirmDelete ? 'Toca otra vez para borrar' : 'Borrar mis datos'}
+                  {confirmDelete ? t('prof.deleteConfirm') : t('prof.delete')}
                 </Text>
               </Pressable>
             </ScrollView>
 
             <View style={styles.footer}>
               <PrimaryButton
-                label={saving ? 'Guardando…' : 'Guardar cambios'}
+                label={saving ? t('prof.saving') : t('prof.save')}
                 onPress={save}
                 disabled={!valid || saving}
               />

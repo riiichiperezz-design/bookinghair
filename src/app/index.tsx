@@ -14,6 +14,7 @@ import { Waveform } from '@/components/Waveform';
 import { getNewActivityCount } from '@/lib/activity';
 import { track } from '@/lib/analytics';
 import { haptics } from '@/lib/haptics';
+import { t } from '@/lib/i18n';
 import { logError } from '@/lib/log';
 import { getMyProfile } from '@/lib/profile';
 import { registerPushToken } from '@/lib/push';
@@ -102,7 +103,7 @@ export default function Home() {
               hitSlop={8}
               style={({ pressed }) => [styles.bellBtn, pressed && styles.pressed]}
               accessibilityRole="button"
-              accessibilityLabel="Novedades"
+              accessibilityLabel={t('home.news')}
             >
               <BellIcon size={20} color={colors.textPrimary} />
               {activity > 0 && (
@@ -122,7 +123,7 @@ export default function Home() {
                   pressed && styles.pressed,
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Editar perfil"
+                accessibilityLabel={t('home.editProfile')}
               >
                 <Text style={styles.userChipText}>@{username}</Text>
               </Pressable>
@@ -142,11 +143,11 @@ export default function Home() {
           </View>
 
           {/* Titular */}
-          <Text style={styles.title}>Alguien te ha mandado algo</Text>
-          <Text style={styles.subtitle}>No sabes quién. Solo le das al play.</Text>
+          <Text style={styles.title}>{t('home.title')}</Text>
+          <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
           {waiting > 0 && (
             <Text style={styles.waiting}>
-              🌍 {waiting} {waiting === 1 ? 'voz dando vueltas' : 'voces dando vueltas'} por el mundo
+              {t('home.waiting', { n: waiting })}
             </Text>
           )}
         </View>
@@ -154,13 +155,13 @@ export default function Home() {
         {/* Acciones */}
         <View style={styles.actions}>
           <PrimaryButton
-            label="Abrir mis voces"
+            label={t('home.open')}
             icon={<InboxIcon size={20} color="#ffffff" />}
             badge={credits}
             onPress={() => router.push('/voice')}
           />
           <GhostButton
-            label="soltar una voz"
+            label={t('home.record')}
             onPress={() => router.push('/record')}
           />
           {received > 0 && (
@@ -173,7 +174,7 @@ export default function Home() {
               ]}
             >
               <Text style={styles.receivedText}>
-                ver tus voces ({received})
+                {t('home.seeYours', { n: received })}
               </Text>
             </Pressable>
           )}

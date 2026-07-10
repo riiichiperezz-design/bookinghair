@@ -2,6 +2,7 @@ import { Platform, Share } from 'react-native';
 
 import { track } from './analytics';
 import { haptics } from './haptics';
+import { t } from './i18n';
 import { logError } from './log';
 import { getMyProfile } from './profile';
 import { ensureSession } from './session';
@@ -78,10 +79,7 @@ export async function shareReferral(): Promise<ShareResult> {
   haptics.tap();
   const code = await getMyReferralCode();
   const link = code ? referralLink(code) : BASE_URL;
-  const message =
-    'Te mando una voz en ecco 🔥 Mandas un audio y recibes el de un ' +
-    'desconocido del mundo. Entra con mi enlace y los dos ganamos una ' +
-    `voz extra 👉 ${link}`;
+  const message = t('share.msg', { link });
 
   if (Platform.OS === 'web') {
     type WebNav = {

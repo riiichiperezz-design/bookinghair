@@ -21,6 +21,7 @@ import { RecordButton } from '@/components/RecordButton';
 import { SongPicker } from '@/components/SongPicker';
 import { hoursToUtcMidnight } from '@/lib/day';
 import { haptics } from '@/lib/haptics';
+import { t } from '@/lib/i18n';
 import { inviteFriends } from '@/lib/share';
 import type { Song } from '@/lib/spotify';
 import { sentToday, uploadVoice } from '@/lib/voices';
@@ -76,14 +77,14 @@ function IdleBody({
 }) {
   return (
     <View style={styles.center}>
-      <Text style={styles.kicker}>una al día · para alguien, sin decir quién</Text>
-      <Text style={styles.title}>Suelta tu voz de hoy</Text>
+      <Text style={styles.kicker}>{t('record.kicker')}</Text>
+      <Text style={styles.title}>{t('record.title')}</Text>
       <View style={styles.recordWrap}>
         <RecordButton recording={recording} onPress={onToggle ?? (() => {})} />
       </View>
       <Text style={styles.timer}>{timer}</Text>
       <Text style={styles.hint}>
-        {recording ? 'toca para parar · máx 30s' : 'toca para empezar a grabar'}
+        {recording ? t('record.stopHint') : t('record.startHint')}
       </Text>
     </View>
   );
@@ -123,10 +124,7 @@ function Recorder() {
     (async () => {
       const status = await AudioModule.requestRecordingPermissionsAsync();
       if (active && !status.granted) {
-        Alert.alert(
-          'Micrófono bloqueado',
-          'Activa el permiso de micrófono para grabar tu voz.'
-        );
+        Alert.alert(t('record.micTitle'), t('record.micBody'));
       }
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
     })();
@@ -189,8 +187,8 @@ function Recorder() {
       setSent(true);
     } catch (e) {
       Alert.alert(
-        'No se pudo enviar',
-        e instanceof Error ? e.message : 'Inténtalo de nuevo.'
+        t('record.sendFail'),
+        e instanceof Error ? e.message : t('record.tryAgain')
       );
     } finally {
       setSending(false);
@@ -205,19 +203,16 @@ function Recorder() {
         <Animated.Text style={styles.bigEmoji} entering={ZoomIn.duration(420)}>
           🌍
         </Animated.Text>
-        <Text style={styles.title}>Tu voz de hoy ya está fuera</Text>
-        <Text style={styles.subtitle}>
-          Una al día: así cada voz vale. Podrás soltar otra en ~{horas}{' '}
-          {horas === 1 ? 'hora' : 'horas'}.
-        </Text>
+        <Text style={styles.title}>{t('record.doneTitle')}</Text>
+        <Text style={styles.subtitle}>{t('record.doneSubtitle', { n: horas })}</Text>
         <View style={styles.sentActions}>
           <PrimaryButton
-            label="Abrir mis voces"
+            label={t('record.openVoices')}
             icon={<InboxIcon size={20} color="#ffffff" />}
             onPress={() => router.replace('/voice')}
           />
           <GhostButton
-            label="volver al inicio"
+            label={t('record.backHome')}
             onPress={() => router.replace('/')}
           />
         </View>
@@ -231,18 +226,15 @@ function Recorder() {
         <Animated.Text style={styles.bigEmoji} entering={ZoomIn.duration(420)}>
           🔥
         </Animated.Text>
-        <Text style={styles.title}>Va de camino. Un segundo y sale.</Text>
-        <Text style={styles.subtitle}>
-          Revisamos rápido que todo esté bien y la soltamos al mundo, sin tu
-          nombre. Que la descubran.
-        </Text>
+        <Text style={styles.title}>{t('record.sentTitle')}</Text>
+        <Text style={styles.subtitle}>{t('record.sentSubtitle')}</Text>
         <View style={styles.sentActions}>
           <PrimaryButton
-            label="Volver al inicio"
+            label={t('record.home')}
             icon={<InboxIcon size={20} color="#ffffff" />}
             onPress={() => router.replace('/')}
           />
-          <GhostButton label="Invitar a un amigo" onPress={inviteFriends} />
+          <GhostButton label={t('record.invite')} onPress={inviteFriends} />
         </View>
       </View>
     );
@@ -255,8 +247,8 @@ function Recorder() {
     return (
       <View style={styles.flexBody}>
         <View style={styles.center}>
-          <Text style={styles.kicker}>tu voz, lista</Text>
-          <Text style={styles.title}>¿La sueltas?</Text>
+          <Text style={styles.kicker}>{t('record.ready')}</Text>
+          <Text style={styles.title}>{t('record.dropIt')}</Text>
         </View>
         <View style={styles.bottom}>
           <AudioPlayerCard
@@ -265,21 +257,19 @@ function Recorder() {
             onTogglePlay={togglePreview}
           />
           {tooShort && (
-            <Text style={styles.warn}>
-              Muy corta. Graba algo un poco más largo.
-            </Text>
+            <Text style={styles.warn}>{t('record.tooShort')}</Text>
           )}
           <View style={styles.songWrap}>
             <SongPicker value={song} onChange={setSong} />
           </View>
           <View style={styles.spacer} />
           <PrimaryButton
-            label={sending ? 'Enviando…' : 'Enviar voz'}
+            label={sending ? t('record.sending') : t('record.send')}
             icon={<InboxIcon size={20} color="#ffffff" />}
             onPress={send}
             disabled={sending || tooShort}
           />
-          <GhostButton label="regrabar" onPress={reRecord} />
+          <GhostButton label={t('record.retry')} onPress={reRecord} />
         </View>
       </View>
     );

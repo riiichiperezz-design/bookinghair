@@ -3,7 +3,7 @@
 // configurado y actualiza su estado. Usa el ROL DE SERVICIO (server-side).
 // Regla de oro: ante cualquier error, el audio se queda 'pendiente'
 // (nunca se aprueba por defecto).
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 import { moderador } from './config.ts';
 import { POLITICA_MODERACION } from './categorias.ts';

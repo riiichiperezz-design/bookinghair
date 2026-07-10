@@ -23,7 +23,7 @@ export const colors = {
   // Texto
   textPrimary: '#FBEDE4',
   textSecondary: '#b88663',
-  textMuted: '#8a5d40',
+  textMuted: '#a06f4e',
   textOnEmber: '#1A0B06',
 
   // Bordes

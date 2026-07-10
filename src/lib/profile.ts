@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { ensureSession } from './session';
 import { supabase } from './supabase';
 
@@ -31,7 +32,7 @@ export async function setVoiceAiConsent(value: boolean): Promise<void> {
 
 export class UsernameTakenError extends Error {
   constructor() {
-    super('Ese nombre ya está cogido. Prueba con otro.');
+    super(t('setup.taken'));
     this.name = 'UsernameTakenError';
   }
 }
