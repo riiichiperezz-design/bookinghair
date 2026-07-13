@@ -21,6 +21,7 @@ import { t } from '@/lib/i18n';
 import { getApproxLocation } from '@/lib/location';
 import { saveProfile, setVoiceAiConsent, UsernameTakenError } from '@/lib/profile';
 import { redeemPendingReferral } from '@/lib/referral';
+import { checkUsername } from '@/lib/username';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
@@ -68,6 +69,11 @@ export default function SetupScreen() {
 
   const submit = async () => {
     if (!canSubmit) return;
+    const bad = checkUsername(username);
+    if (bad) {
+      setError(bad);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {

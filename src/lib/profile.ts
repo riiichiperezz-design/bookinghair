@@ -10,6 +10,8 @@ export type Profile = {
   rol: string;
   bonus_credits: number;
   consent_voice_ai: boolean;
+  badge: 'verificado' | 'empresa' | null;
+  avatar_url: string | null;
 };
 
 /** Perfil del usuario actual, o null si aún no lo ha creado. */
@@ -17,7 +19,9 @@ export async function getMyProfile(): Promise<Profile | null> {
   const user = await ensureSession();
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, country, region, rol, bonus_credits, consent_voice_ai')
+    .select(
+      'id, username, country, region, rol, bonus_credits, consent_voice_ai, badge, avatar_url'
+    )
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;

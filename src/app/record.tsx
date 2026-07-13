@@ -22,10 +22,11 @@ import { SongPicker } from '@/components/SongPicker';
 import { hoursToUtcMidnight } from '@/lib/day';
 import { haptics } from '@/lib/haptics';
 import { t } from '@/lib/i18n';
+import { enableDailyReminder } from '@/lib/notifications';
 import { inviteFriends } from '@/lib/share';
 import type { Song } from '@/lib/spotify';
 import { sentToday, uploadVoice } from '@/lib/voices';
-import { colors, fonts, spacing } from '@/theme';
+import { colors, fonts, radius, spacing } from '@/theme';
 
 const MAX_MS = 30_000; // duración máxima de una voz
 const MIN_MS = 1_000; // duración mínima para poder enviar
@@ -102,6 +103,13 @@ function Recorder() {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [todayDone, setTodayDone] = useState(false);
+  const [pushState, setPushState] = useState<'ask' | 'on' | 'web'>('ask');
+
+  const askPush = async () => {
+    haptics.tap();
+    const ok = await enableDailyReminder();
+    setPushState(ok ? 'on' : 'web');
+  };
 
   // Ritual diario: si ya soltaste tu voz de hoy, avisa antes de grabar en vano
   // (el servidor lo bloquea igualmente al enviar).
@@ -228,6 +236,32 @@ function Recorder() {
         </Animated.Text>
         <Text style={styles.title}>{t('record.sentTitle')}</Text>
         <Text style={styles.subtitle}>{t('record.sentSubtitle')}</Text>
+
+        {/* Gancho de vuelta: activar el aviso de la voz de mañana. */}
+        <View style={styles.pushCard}>
+          {pushState === 'ask' ? (
+            <>
+              <Text style={styles.pushTitle}>{t('record.pushTitle')}</Text>
+              <Text style={styles.pushBody}>{t('record.pushBody')}</Text>
+              <View style={styles.pushBtns}>
+                <Pressable
+                  onPress={askPush}
+                  style={({ pressed }) => [styles.pushYes, pressed && styles.pressedBtn]}
+                >
+                  <Text style={styles.pushYesText}>{t('record.pushYes')}</Text>
+                </Pressable>
+                <Pressable onPress={() => setPushState('web')} hitSlop={6}>
+                  <Text style={styles.pushNo}>{t('record.pushNo')}</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.pushDone}>
+              {pushState === 'on' ? t('ret.remindOn') : t('ret.remindWeb')}
+            </Text>
+          )}
+        </View>
+
         <View style={styles.sentActions}>
           <PrimaryButton
             label={t('record.home')}
@@ -363,5 +397,57 @@ const styles = StyleSheet.create({
   sentActions: {
     alignSelf: 'stretch',
     marginTop: spacing.xl,
+  },
+  pushCard: {
+    alignSelf: 'stretch',
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.ember,
+    backgroundColor: colors.surface,
+    gap: spacing.sm,
+  },
+  pushTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  pushBody: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.textSecondary,
+  },
+  pushBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    marginTop: spacing.xs,
+  },
+  pushYes: {
+    backgroundColor: colors.ember,
+    borderRadius: radius.pill,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
+  },
+  pushYesText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: '#ffffff',
+  },
+  pushNo: {
+    fontFamily: fonts.label,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  pushDone: {
+    fontFamily: fonts.labelRegular,
+    fontSize: 13,
+    color: colors.emberBright,
+    textAlign: 'center',
+  },
+  pressedBtn: {
+    opacity: 0.8,
   },
 });

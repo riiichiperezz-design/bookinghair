@@ -211,7 +211,12 @@ function VoiceInner() {
   return (
     <View style={styles.flexBody}>
       <Animated.View style={styles.reveal} entering={FadeInDown.duration(450)}>
-        <Avatar name={username ?? '?'} size={92} />
+        <Avatar
+          name={username ?? '?'}
+          size={92}
+          uri={voice?.avatarUrl}
+          badge={voice?.badge}
+        />
         <Text style={styles.kicker}>{t('voice.kicker')}</Text>
         <Text style={styles.title}>
           {username ? t('voice.titleUser', { u: username }) : t('voice.titleAnon')}

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Avatar, type Badge } from '@/components/Avatar';
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { CountrySearch } from '@/components/CountrySearch';
 import { EmberBackground } from '@/components/EmberBackground';
@@ -20,6 +21,7 @@ import { ArrowLeftIcon } from '@/components/icons';
 import { WorldMapPicker } from '@/components/WorldMapPicker';
 import { type Country, flagFor } from '@/constants/countries';
 import { deleteMyData, getAccountEmail, linkAccount } from '@/lib/account';
+import { pickAndUploadAvatar } from '@/lib/avatar';
 import { t } from '@/lib/i18n';
 import { getApproxLocation } from '@/lib/location';
 import { enableDailyReminder } from '@/lib/notifications';
@@ -30,6 +32,7 @@ import {
   UsernameTakenError,
 } from '@/lib/profile';
 import { shareReferral } from '@/lib/referral';
+import { checkUsername } from '@/lib/username';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
@@ -55,6 +58,22 @@ export default function ProfileScreen() {
   const [bonus, setBonus] = useState(0);
   const [consentAi, setConsentAi] = useState(false);
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [badge, setBadge] = useState<Badge>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const changePhoto = async () => {
+    if (uploadingAvatar) return;
+    setUploadingAvatar(true);
+    try {
+      const url = await pickAndUploadAvatar();
+      if (url) setAvatarUrl(url);
+    } catch {
+      // permiso denegado / cancelado
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const invite = async () => {
     const r = await shareReferral();
@@ -73,6 +92,8 @@ export default function ProfileScreen() {
         setIsAdmin(p?.rol === 'admin');
         setBonus(p?.bonus_credits ?? 0);
         setConsentAi(p?.consent_voice_ai ?? false);
+        setAvatarUrl(p?.avatar_url ?? null);
+        setBadge(p?.badge ?? null);
         setAccountEmail(email);
         setLoaded(true);
       })
@@ -138,6 +159,11 @@ export default function ProfileScreen() {
 
   const save = async () => {
     if (!valid || saving) return;
+    const bad = checkUsername(username);
+    if (bad) {
+      setError(bad);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -186,6 +212,31 @@ export default function ProfileScreen() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
+              {/* Foto de perfil */}
+              <View style={styles.avatarWrap}>
+                <Pressable onPress={changePhoto} accessibilityRole="button">
+                  <Avatar
+                    name={username || '?'}
+                    size={92}
+                    uri={avatarUrl}
+                    badge={badge}
+                  />
+                </Pressable>
+                <Pressable
+                  onPress={changePhoto}
+                  hitSlop={8}
+                  style={({ pressed }) => pressed && styles.pressed}
+                >
+                  <Text style={styles.photoLink}>
+                    {uploadingAvatar
+                      ? t('prof.photoUp')
+                      : avatarUrl
+                        ? t('prof.photo')
+                        : t('prof.addPhoto')}
+                  </Text>
+                </Pressable>
+              </View>
+
               <View style={styles.inputRow}>
                 <Text style={styles.at}>@</Text>
                 <TextInput
@@ -372,6 +423,16 @@ const styles = StyleSheet.create({
   scroll: {
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
+  },
+  avatarWrap: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  photoLink: {
+    fontFamily: fonts.label,
+    fontSize: 13,
+    color: colors.emberBright,
   },
   inputRow: {
     flexDirection: 'row',

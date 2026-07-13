@@ -63,6 +63,8 @@ export type Voice = {
   username: string | null;
   heardAt: string | null;
   song: Song | null;
+  badge: 'verificado' | 'empresa' | null;
+  avatarUrl: string | null;
 };
 
 /** Marca una voz como escuchada (escucha única). Idempotente en el servidor. */
@@ -244,7 +246,7 @@ export async function claimVoice(): Promise<Voice | null> {
 
   const { data: sender } = await supabase
     .from('profiles')
-    .select('username, country')
+    .select('username, country, badge, avatar_url')
     .eq('id', row.sender_id)
     .maybeSingle();
 
@@ -258,6 +260,8 @@ export async function claimVoice(): Promise<Voice | null> {
     username: sender?.username ?? null,
     heardAt: null,
     song: row.song ?? null,
+    badge: (sender?.badge as 'verificado' | 'empresa' | null) ?? null,
+    avatarUrl: sender?.avatar_url ?? null,
     // TTL corto: con escucha única no tiene sentido una URL de 1 h.
     audioUrl: await signedUrl(row.audio_path, 600),
   };
@@ -280,7 +284,7 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
   const senderIds = [...new Set(rows.map((r) => r.sender_id))];
   const { data: profs } = await supabase
     .from('profiles')
-    .select('id, username, country')
+    .select('id, username, country, badge, avatar_url')
     .in('id', senderIds);
   const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
   const urls = await signedUrls(rows.map((r) => r.audio_path));
@@ -297,6 +301,8 @@ export async function fetchReceivedVoices(): Promise<Voice[]> {
       username: prof?.username ?? null,
       heardAt: r.heard_at ?? null,
       song: (r.song as Song | null) ?? null,
+      badge: (prof?.badge as 'verificado' | 'empresa' | null) ?? null,
+      avatarUrl: prof?.avatar_url ?? null,
       audioUrl: urls.get(r.audio_path) ?? '',
     };
   });

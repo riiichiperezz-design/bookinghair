@@ -8,8 +8,18 @@
 
 const es: Record<string, string> = {
   // Home
-  'home.title': 'Alguien te ha mandado algo',
-  'home.subtitle': 'No sabes quién. Solo le das al play.',
+  'home.title': 'Una voz que solo\nescucharás tú',
+  'home.subtitle': '30 segundos de alguien que no conoces, en cualquier rincón del mundo. Una vez. Y desaparece.',
+  'user.reserved': 'Ese nombre está reservado. Elige otro.',
+  'user.offensive': 'Ese nombre no está permitido. Elige otro.',
+  'user.needsLetters': 'Usa también alguna letra en tu nombre.',
+  'prof.photo': 'Cambiar foto',
+  'prof.addPhoto': 'Añadir foto',
+  'prof.photoUp': 'Subiendo…',
+  'record.pushTitle': 'Que no se te escape la de mañana',
+  'record.pushBody': 'Te avisamos cuando una voz nueva esté esperándote. Una al día, sin spam.',
+  'record.pushYes': 'Avisadme',
+  'record.pushNo': 'Ahora no',
   'home.waiting_one': '🌍 {n} voz dando vueltas por el mundo',
   'home.waiting_other': '🌍 {n} voces dando vueltas por el mundo',
   'home.open': 'Abrir mis voces',
@@ -182,8 +192,18 @@ const es: Record<string, string> = {
 };
 
 const en: Record<string, string> = {
-  'home.title': 'Someone sent you something',
-  'home.subtitle': "You don't know who. Just press play.",
+  'home.title': 'A voice only\nyou will hear',
+  'home.subtitle': "30 seconds from a stranger somewhere in the world. Once. Then it's gone.",
+  'user.reserved': 'That name is reserved. Pick another.',
+  'user.offensive': 'That name is not allowed. Pick another.',
+  'user.needsLetters': 'Use at least one letter in your name.',
+  'prof.photo': 'Change photo',
+  'prof.addPhoto': 'Add photo',
+  'prof.photoUp': 'Uploading…',
+  'record.pushTitle': "Don't miss tomorrow's",
+  'record.pushBody': "We'll tell you when a new voice is waiting. One a day, no spam.",
+  'record.pushYes': 'Notify me',
+  'record.pushNo': 'Not now',
   'home.waiting_one': '🌍 {n} voice drifting around the world',
   'home.waiting_other': '🌍 {n} voices drifting around the world',
   'home.open': 'Open my voices',

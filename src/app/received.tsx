@@ -232,7 +232,12 @@ function Lists({ tab }: { tab: Tab }) {
           const heard = item.heardAt != null;
           return (
             <View style={[styles.item, heard && styles.itemHeard]}>
-              <Avatar name={item.username ?? '?'} size={44} />
+              <Avatar
+                name={item.username ?? '?'}
+                size={44}
+                uri={item.avatarUrl}
+                badge={item.badge}
+              />
               <View style={styles.itemInfo}>
                 <Text style={styles.itemName} numberOfLines={1}>
                   {item.username ? `@${item.username}` : t('rcv.anon')}
@@ -299,10 +304,10 @@ function Lists({ tab }: { tab: Tab }) {
               )}
             </View>
           </View>
-          <PlayButton
-            playing={currentId === item.id && playing}
-            onPress={() => toggle(item.id)}
-          />
+          {/* Escucha única: tampoco puedes volver a oír lo que enviaste. */}
+          <View style={styles.lockBtn}>
+            <LockIcon size={18} color={colors.textMuted} />
+          </View>
         </View>
       )}
     />

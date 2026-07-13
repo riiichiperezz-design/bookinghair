@@ -44,6 +44,12 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "ecco necesita acceso a tus fotos para elegir tu foto de perfil."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#140805",
