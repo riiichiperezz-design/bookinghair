@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   StyleSheet,
   Text,
@@ -31,19 +32,26 @@ export function PrimaryButton({
         haptics.tap();
         onPress?.(e);
       }}
-      style={[styles.primary, disabled ? styles.disabled : undefined]}
+      style={[styles.primaryWrap, disabled ? styles.disabled : styles.glow]}
     >
-      {icon != null && (
-        <View>
-          {icon}
-          {badge != null && badge > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{badge}</Text>
-            </View>
-          )}
-        </View>
-      )}
-      <Text style={styles.primaryLabel}>{label}</Text>
+      <LinearGradient
+        colors={[colors.emberBright, colors.ember, colors.emberDeep]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.primaryFill}
+      >
+        {icon != null && (
+          <View>
+            {icon}
+            {badge != null && badge > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{badge}</Text>
+              </View>
+            )}
+          </View>
+        )}
+        <Text style={styles.primaryLabel}>{label}</Text>
+      </LinearGradient>
     </PressableScale>
   );
 }
@@ -68,10 +76,20 @@ export function GhostButton({ label, onPress }: GhostButtonProps) {
 }
 
 const styles = StyleSheet.create({
-  primary: {
-    height: 56,
-    backgroundColor: colors.ember,
+  primaryWrap: {
+    height: 58,
     borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  glow: {
+    shadowColor: colors.ember,
+    shadowOpacity: 0.55,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  primaryFill: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -80,11 +98,12 @@ const styles = StyleSheet.create({
   primaryLabel: {
     color: '#ffffff',
     fontFamily: fonts.displayBold,
-    fontSize: 16,
+    fontSize: 16.5,
+    letterSpacing: 0.2,
   },
   ghost: {
     height: 50,
-    backgroundColor: 'transparent',
+    backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.borderStrong,
@@ -98,23 +117,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
   badge: {
     position: 'absolute',
     top: -6,
     right: -10,
-    minWidth: 17,
-    height: 17,
-    paddingHorizontal: 3,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
     borderRadius: 9,
     backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
-    color: colors.ember,
+    color: colors.emberDeep,
     fontFamily: fonts.labelBold,
-    fontSize: 10,
+    fontSize: 10.5,
   },
 });

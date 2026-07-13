@@ -10,7 +10,7 @@ import {
   isStreakMilestone,
   StreakCelebration,
 } from '@/components/StreakCelebration';
-import { Waveform } from '@/components/Waveform';
+import { PulseOrb } from '@/components/PulseOrb';
 import { getNewActivityCount } from '@/lib/activity';
 import { track } from '@/lib/analytics';
 import { haptics } from '@/lib/haptics';
@@ -137,18 +137,19 @@ export default function Home() {
             ECCO<Text style={styles.wordmarkDot}>.</Text>
           </Text>
 
-          {/* Onda de audio */}
-          <View style={styles.waveWrap}>
-            <Waveform />
+          {/* Orbe brasa vivo */}
+          <View style={styles.orbWrap}>
+            <PulseOrb />
           </View>
 
           {/* Titular */}
           <Text style={styles.title}>{t('home.title')}</Text>
           <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
           {waiting > 0 && (
-            <Text style={styles.waiting}>
-              {t('home.waiting', { n: waiting })}
-            </Text>
+            <View style={styles.livePill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveText}>{t('home.waiting', { n: waiting })}</Text>
+            </View>
           )}
         </View>
 
@@ -272,36 +273,53 @@ const styles = StyleSheet.create({
   wordmarkDot: {
     color: colors.ember,
   },
-  waveWrap: {
-    width: 124,
-    height: 124,
+  orbWrap: {
+    width: 150,
+    height: 150,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
   },
   title: {
     fontFamily: fonts.display,
-    fontSize: 33,
-    lineHeight: 36,
-    letterSpacing: -1.2,
+    fontSize: 37,
+    lineHeight: 39,
+    letterSpacing: -1.6,
     color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   subtitle: {
     fontFamily: fonts.labelRegular,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 13.5,
+    lineHeight: 21,
     color: colors.textSecondary,
     textAlign: 'center',
+    paddingHorizontal: spacing.lg,
   },
-  waiting: {
-    fontFamily: fonts.labelRegular,
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.xl,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#4ADE80',
+  },
+  liveText: {
+    fontFamily: fonts.label,
     fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.lg,
+    color: colors.textSecondary,
   },
   actions: {
     paddingBottom: spacing.xl,

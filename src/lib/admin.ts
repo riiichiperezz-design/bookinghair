@@ -74,6 +74,32 @@ export async function resolveAudio(
   if (error) throw error;
 }
 
+export type SolicitudItem = {
+  id: number;
+  user_id: string;
+  username: string | null;
+  tipo: 'verificado' | 'empresa';
+  enlace: string | null;
+  nota: string | null;
+  creado_en: string;
+};
+
+/** Solicitudes de verificación pendientes (solo admin). */
+export async function fetchVerificaciones(): Promise<SolicitudItem[]> {
+  const { data, error } = await supabase.rpc('admin_verificaciones');
+  if (error) throw error;
+  return (data ?? []) as SolicitudItem[];
+}
+
+/** Aprueba (concede insignia) o rechaza una solicitud (solo admin). */
+export async function resolveVerificacion(id: number, aprobar: boolean) {
+  const { error } = await supabase.rpc('admin_resolver_verificacion', {
+    p_id: id,
+    p_aprobar: aprobar,
+  });
+  if (error) throw error;
+}
+
 /** URL firmada para reproducir un audio en el panel (los admins pueden firmar). */
 export async function adminSignedUrl(path: string): Promise<string> {
   const { data } = await supabase.storage

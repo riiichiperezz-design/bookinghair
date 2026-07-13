@@ -189,6 +189,34 @@ const es: Record<string, string> = {
   'prof.saving': 'Guardando…',
   'prof.admin': 'Panel de moderación 🛡️',
   'prof.metrics': 'Métricas de retención 📊',
+  'prof.verify': 'Solicitar verificación ✔',
+  'prof.verifs': 'Solicitudes de verificación ✔',
+
+  // Verificación
+  'verify.header': 'verificación',
+  'verify.title': 'Solicita tu insignia',
+  'verify.sub': 'Para famosos, creadores y marcas: evita suplantaciones y da confianza a quien te escucha.',
+  'verify.typePersona': 'Persona / creador',
+  'verify.typePersonaSub': 'Insignia azul de cuenta verificada.',
+  'verify.typeEmpresa': 'Empresa / marca',
+  'verify.typeEmpresaSub': 'Insignia de cuenta oficial de empresa.',
+  'verify.linkLabel': 'Enlace que lo demuestre',
+  'verify.linkPh': 'Instagram, web oficial, prensa…',
+  'verify.noteLabel': 'Cuéntanos quién eres',
+  'verify.notePh': 'Breve descripción (opcional)',
+  'verify.submit': 'Enviar solicitud',
+  'verify.sending': 'Enviando…',
+  'verify.pending': 'Tu solicitud está en revisión. Te avisaremos.',
+  'verify.approved': 'Ya estás verificado ✔ ¡Enhorabuena!',
+  'verify.rejected': 'Tu última solicitud no se aprobó. Puedes volver a intentarlo.',
+  'verify.done': 'Solicitud enviada. La revisaremos pronto.',
+  'verify.needName': 'Primero elige tu @usuario en el perfil.',
+
+  // Panel admin de verificaciones
+  'verifs.header': 'verificaciones',
+  'verifs.empty': 'No hay solicitudes pendientes.',
+  'verifs.approve': 'Aprobar',
+  'verifs.reject': 'Rechazar',
 };
 
 const en: Record<string, string> = {
@@ -363,6 +391,32 @@ const en: Record<string, string> = {
   'prof.saving': 'Saving…',
   'prof.admin': 'Moderation panel 🛡️',
   'prof.metrics': 'Retention metrics 📊',
+  'prof.verify': 'Request verification ✔',
+  'prof.verifs': 'Verification requests ✔',
+
+  'verify.header': 'verification',
+  'verify.title': 'Request your badge',
+  'verify.sub': 'For public figures, creators and brands: prevent impersonation and build trust with your listeners.',
+  'verify.typePersona': 'Person / creator',
+  'verify.typePersonaSub': 'Blue verified badge.',
+  'verify.typeEmpresa': 'Business / brand',
+  'verify.typeEmpresaSub': 'Official business badge.',
+  'verify.linkLabel': 'A link that proves it',
+  'verify.linkPh': 'Instagram, official site, press…',
+  'verify.noteLabel': 'Tell us who you are',
+  'verify.notePh': 'Short description (optional)',
+  'verify.submit': 'Send request',
+  'verify.sending': 'Sending…',
+  'verify.pending': "Your request is under review. We'll let you know.",
+  'verify.approved': "You're verified ✔ Congrats!",
+  'verify.rejected': "Your last request wasn't approved. You can try again.",
+  'verify.done': "Request sent. We'll review it soon.",
+  'verify.needName': 'First pick your @username in your profile.',
+
+  'verifs.header': 'verifications',
+  'verifs.empty': 'No pending requests.',
+  'verifs.approve': 'Approve',
+  'verifs.reject': 'Reject',
 };
 
 const DICTS = { es, en } as const;

@@ -351,6 +351,23 @@ export default function ProfileScreen() {
                 <Text style={styles.linkText}>{t('prof.reminder')}</Text>
               </Pressable>
               {reminderMsg && <Text style={styles.helper}>{reminderMsg}</Text>}
+              <Pressable
+                onPress={() => router.push('/verificar')}
+                style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+              >
+                <Text style={styles.linkText}>{t('prof.verify')}</Text>
+              </Pressable>
+              {isAdmin && (
+                <Pressable
+                  onPress={() => router.push('/verificaciones')}
+                  style={({ pressed }) => [
+                    styles.linkRow,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={styles.linkText}>{t('prof.verifs')}</Text>
+                </Pressable>
+              )}
               {isAdmin && (
                 <Pressable
                   onPress={() => router.push('/admin')}
