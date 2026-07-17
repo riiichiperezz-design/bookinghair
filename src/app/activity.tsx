@@ -12,7 +12,14 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmberBackground } from '@/components/EmberBackground';
-import { ArrowLeftIcon, ShareIcon } from '@/components/icons';
+import {
+  ArrowLeftIcon,
+  FlameIcon,
+  GlobeIcon,
+  SendIcon,
+  ShareIcon,
+} from '@/components/icons';
+import { ReactionGlyph, type ReactionName } from '@/components/ReactionIcons';
 import {
   fetchReceivedReactions,
   getStats,
@@ -88,10 +95,26 @@ export default function ActivityScreen() {
             {/* Stats */}
             {stats && (
               <View style={styles.statsRow}>
-                <StatCard label="enviadas" value={stats.sent} icon="📤" />
-                <StatCard label="reacciones" value={stats.reactions} icon="❤️" />
-                <StatCard label="países" value={stats.countries} icon="🌍" />
-                <StatCard label="mejor racha" value={stats.streakBest} icon="🔥" />
+                <StatCard
+                  label="enviadas"
+                  value={stats.sent}
+                  icon={<SendIcon size={18} color={colors.emberBright} />}
+                />
+                <StatCard
+                  label="reacciones"
+                  value={stats.reactions}
+                  icon={<ReactionGlyph name="me_llega" size={18} />}
+                />
+                <StatCard
+                  label="países"
+                  value={stats.countries}
+                  icon={<GlobeIcon size={18} color={colors.emberBright} />}
+                />
+                <StatCard
+                  label="mejor racha"
+                  value={stats.streakBest}
+                  icon={<FlameIcon size={18} color={colors.emberBright} />}
+                />
               </View>
             )}
 
@@ -112,7 +135,9 @@ export default function ActivityScreen() {
                   entering={FadeInDown.duration(360).delay(Math.min(i, 8) * 40)}
                   style={styles.item}
                 >
-                  <Text style={styles.itemEmoji}>{e.emoji}</Text>
+                  <View style={styles.itemIcon}>
+                    <ReactionGlyph name={e.emoji as ReactionName} size={20} />
+                  </View>
                   <Text style={styles.itemText}>
                     Alguien reaccionó a tu voz
                   </Text>
@@ -134,11 +159,11 @@ function StatCard({
 }: {
   label: string;
   value: number;
-  icon: string;
+  icon: React.ReactNode;
 }) {
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statIcon}>{icon}</Text>
+      <View style={styles.statIcon}>{icon}</View>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
@@ -176,7 +201,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
   },
-  statIcon: { fontSize: 18 },
+  statIcon: { height: 22, justifyContent: 'center' },
   statValue: {
     fontFamily: fonts.display,
     fontSize: 22,
@@ -207,7 +232,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  itemEmoji: { fontSize: 22 },
+  itemIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   itemText: {
     flex: 1,
     fontFamily: fonts.bodyMedium,

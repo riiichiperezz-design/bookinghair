@@ -1,4 +1,4 @@
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { colors } from '@/theme';
 
@@ -167,6 +167,50 @@ export function ExternalPlayIcon({ size = 16, color = colors.textPrimary }: Icon
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M8 5.5v13l11-6.5-11-6.5Z" fill={color} />
+    </Svg>
+  );
+}
+
+/** Globo terráqueo (para "países"). */
+export function GlobeIcon({ size = 20, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={9} stroke={color} strokeWidth={2} />
+      <Path
+        d="M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18M3.5 9h17M3.5 15h17"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+/** Llama (para la racha). */
+export function FlameIcon({ size = 20, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M13 2c.5 3.5-1.8 4.8-3.2 6.6C8.3 10.5 7 12 7 14.5A5 5 0 0 0 17 15c0-2-1-3.4-1.8-4.3.3 1 .1 2.2-.7 2.9.6-2.6-.7-5.6-1.5-6.6-.5 1.6-1.6 2.3-2.4 3.4"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Avión de papel (para "enviadas"). */
+export function SendIcon({ size = 20, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M21 3 3 10.5l6 2.3M21 3l-6.5 18-3.7-8.2M21 3 9 12.8"
+        stroke={color}
+        strokeWidth={1.9}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
