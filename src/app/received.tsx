@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon, LockIcon, PauseIcon, PlayIcon } from '@/components/icons';
+import { ReactionGlyph, type ReactionName } from '@/components/ReactionIcons';
 import { flagFor } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
 import { t } from '@/lib/i18n';
@@ -296,9 +297,10 @@ function Lists({ tab }: { tab: Tab }) {
               {item.reactions.length > 0 && (
                 <View style={styles.reactionChips}>
                   {item.reactions.map((r) => (
-                    <Text key={r.emoji} style={styles.reactionChip}>
-                      {r.emoji} {r.count}
-                    </Text>
+                    <View key={r.emoji} style={styles.reactionChip}>
+                      <ReactionGlyph name={r.emoji as ReactionName} size={14} />
+                      <Text style={styles.reactionCount}>{r.count}</Text>
+                    </View>
                   ))}
                 </View>
               )}
@@ -433,6 +435,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   reactionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  reactionCount: {
     fontFamily: fonts.labelBold,
     fontSize: 12,
     color: colors.textPrimary,

@@ -1,41 +1,38 @@
-import { useCallback, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  Easing,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
+import {
+  ReactionIcon,
+  type ReactionName,
+  REACTION_NAMES,
+} from '@/components/ReactionIcons';
 import { haptics } from '@/lib/haptics';
-import { colors } from '@/theme';
-
-const REACTIONS = ['❤️', '😂', '🔥', '🥹', '😮'] as const;
+import { colors, fonts } from '@/theme';
 
 type Props = {
-  onReact?: (emoji: string) => void;
+  onReact?: (reaction: ReactionName) => void;
 };
 
-/**
- * Reacciones con física: squash & stretch, giro, anillo expansivo y un
- * estallido de emojis que salen disparados con trayectorias aleatorias.
- */
+/** Fila de reacciones con iconos brasa animados y etiqueta. Selección única. */
 export function ReactionsRow({ onReact }: Props) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<ReactionName | null>(null);
 
   return (
     <View style={styles.row}>
-      {REACTIONS.map((emoji) => (
-        <ReactionItem
-          key={emoji}
-          emoji={emoji}
-          selected={selected === emoji}
+      {REACTION_NAMES.map((name) => (
+        <ReactionButton
+          key={name}
+          name={name}
+          selected={selected === name}
           onPress={() => {
-            const next = selected === emoji ? null : emoji;
+            const next = selected === name ? null : name;
             setSelected(next);
             if (next) {
               haptics.tap();
@@ -48,149 +45,64 @@ export function ReactionsRow({ onReact }: Props) {
   );
 }
 
-type Particle = {
-  id: number;
-  dx: number;
-  dy: number;
-  rot: number;
-  size: number;
-  dur: number;
-  delay: number;
-};
-
-function ReactionItem({
-  emoji,
+function ReactionButton({
+  name,
   selected,
   onPress,
 }: {
-  emoji: string;
+  name: ReactionName;
   selected: boolean;
   onPress: () => void;
 }) {
+  const [nonce, setNonce] = useState(0);
   const scale = useSharedValue(1);
-  const rotate = useSharedValue(0);
-  const ring = useSharedValue(0);
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const nextId = useRef(0);
+  const glow = useSharedValue(0);
 
-  const removeParticle = useCallback((id: number) => {
-    setParticles((ps) => ps.filter((p) => p.id !== id));
-  }, []);
-
-  const btnStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { rotate: `${rotate.value}deg` },
-    ],
+  const wrapStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
   }));
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
 
-  const ringStyle = useAnimatedStyle(() => ({
-    opacity: ring.value === 0 ? 0 : 0.75 * (1 - ring.value),
-    transform: [{ scale: 0.6 + ring.value * 1.8 }],
-  }));
-
-  const burst = () => {
-    // Squash & stretch con rebote
+  const fire = () => {
+    setNonce((n) => n + 1);
     scale.value = withSequence(
-      withTiming(0.82, { duration: 70, easing: Easing.out(Easing.quad) }),
-      withSpring(1.28, { damping: 5, stiffness: 320 }),
-      withSpring(1, { damping: 7, stiffness: 240 })
+      withTiming(0.9, { duration: 70 }),
+      withSpring(1, { damping: 6, stiffness: 260 })
     );
-    // Giro de celebración
-    rotate.value = withSequence(
-      withTiming(-14, { duration: 80 }),
-      withSpring(10, { damping: 4, stiffness: 260 }),
-      withSpring(0, { damping: 6, stiffness: 220 })
+    glow.value = withSequence(
+      withTiming(1, { duration: 130 }),
+      withTiming(0, { duration: 520 })
     );
-    // Anillo expansivo
-    ring.value = 0;
-    ring.value = withTiming(1, { duration: 560, easing: Easing.out(Easing.cubic) });
-    // 6 emojis disparados con trayectorias aleatorias
-    const nuevos: Particle[] = Array.from({ length: 6 }).map((_, i) => ({
-      id: nextId.current++,
-      dx: Math.round(Math.random() * 76 - 38),
-      dy: 66 + Math.round(Math.random() * 52),
-      rot: Math.round(Math.random() * 72 - 36),
-      size: 15 + Math.round(Math.random() * 11),
-      dur: 700 + Math.round(Math.random() * 320),
-      delay: i * 34,
-    }));
-    setParticles((ps) => [...ps, ...nuevos]);
   };
 
   return (
     <Pressable
       onPress={() => {
-        burst();
+        fire();
         onPress();
       }}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      accessibilityLabel={`Reaccionar ${emoji}`}
+      accessibilityLabel={name}
+      style={styles.item}
     >
-      <View style={styles.itemWrap}>
-        {particles.map((p) => (
-          <FloatingEmoji
-            key={p.id}
-            emoji={emoji}
-            particle={p}
-            onDone={() => removeParticle(p.id)}
-          />
-        ))}
-        <Animated.View style={[styles.ring, ringStyle]} pointerEvents="none" />
+      <View style={styles.circleWrap}>
+        <Animated.View style={[styles.glow, glowStyle]} />
         <Animated.View
-          style={[styles.item, selected && styles.itemSelected, btnStyle]}
+          style={[styles.circle, selected && styles.circleSelected, wrapStyle]}
         >
-          <Text style={styles.emoji}>{emoji}</Text>
+          <ReactionIcon
+            name={name}
+            size={30}
+            nonce={nonce}
+            color={selected ? colors.emberBright : colors.ember}
+          />
         </Animated.View>
       </View>
+      <Text style={[styles.label, selected && styles.labelSelected]}>
+        {name}
+      </Text>
     </Pressable>
-  );
-}
-
-function FloatingEmoji({
-  emoji,
-  particle,
-  onDone,
-}: {
-  emoji: string;
-  particle: Particle;
-  onDone: () => void;
-}) {
-  const t = useSharedValue(0);
-  const started = useRef(false);
-  if (!started.current) {
-    started.current = true;
-    t.value = withDelay(
-      particle.delay,
-      withTiming(
-        1,
-        { duration: particle.dur, easing: Easing.out(Easing.quad) },
-        (finished) => {
-          if (finished) runOnJS(onDone)();
-        }
-      )
-    );
-  }
-
-  const style = useAnimatedStyle(() => ({
-    opacity: t.value < 0.15 ? t.value / 0.15 : 1 - (t.value - 0.15) / 0.85,
-    transform: [
-      { translateY: -particle.dy * t.value },
-      // Deriva lateral con curva (parece que "flota", no que sube recto)
-      { translateX: particle.dx * t.value * t.value },
-      { rotate: `${particle.rot * t.value}deg` },
-      { scale: 0.5 + t.value * 0.9 },
-    ],
-  }));
-
-  return (
-    <Animated.Text
-      style={[styles.floating, { fontSize: particle.size }, style]}
-      pointerEvents="none"
-    >
-      {emoji}
-    </Animated.Text>
   );
 }
 
@@ -198,46 +110,44 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 10,
+    gap: 12,
   },
-  itemWrap: {
+  item: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  circleWrap: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  item: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  circle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  itemSelected: {
+  circleSelected: {
     borderWidth: 1.5,
     borderColor: colors.emberBright,
     backgroundColor: colors.surfaceElevated,
-    shadowColor: colors.ember,
-    shadowOpacity: 0.55,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
   },
-  ring: {
+  glow: {
     position: 'absolute',
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
-    borderColor: colors.emberBright,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: colors.ember,
   },
-  emoji: {
-    fontSize: 24,
+  label: {
+    fontFamily: fonts.label,
+    fontSize: 11,
+    color: colors.textMuted,
   },
-  floating: {
-    position: 'absolute',
-    top: 2,
-    zIndex: 2,
+  labelSelected: {
+    color: colors.emberBright,
   },
 });
