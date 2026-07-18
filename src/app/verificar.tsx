@@ -87,7 +87,7 @@ export default function VerificarScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel={t('voice.back')}

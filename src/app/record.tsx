@@ -51,7 +51,7 @@ export default function RecordScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Volver"
@@ -163,7 +163,7 @@ function Recorder() {
     }
   };
 
-  // Auto-stop al llegar al máximo (60 s).
+  // Auto-stop al llegar al máximo (30 s).
   useEffect(() => {
     if (recorderState.isRecording && (recorderState.durationMillis ?? 0) >= MAX_MS) {
       stopRecording();

@@ -168,7 +168,7 @@ export default function ProfileScreen() {
     setError(null);
     try {
       await saveProfile(username, country, region);
-      router.back();
+      (router.canGoBack() ? router.back() : router.replace('/'));
     } catch (e) {
       if (e instanceof UsernameTakenError) {
         setError(e.message);
@@ -187,7 +187,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Volver"
