@@ -1,10 +1,13 @@
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmberBackground } from '@/components/EmberBackground';
 import { ArrowLeftIcon } from '@/components/icons';
 import { colors, fonts, spacing } from '@/theme';
+
+const PRIVACY_URL = 'https://riiichiperezz-design.github.io/bookinghair/privacy.html';
+const TERMS_URL = 'https://riiichiperezz-design.github.io/bookinghair/terminos.html';
 
 const PRIVACY = [
   ['Qué guardamos', 'Tu @usuario, país (opcional) y las notas de voz que envías o recibes. No pedimos tu nombre real ni tu agenda. La sesión es anónima por dispositivo.'],
@@ -59,9 +62,24 @@ export default function LegalScreen() {
             </View>
           ))}
 
+          <View style={styles.links}>
+            <Pressable
+              onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})}
+              accessibilityRole="link"
+            >
+              <Text style={styles.link}>Política de privacidad completa ↗</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => Linking.openURL(TERMS_URL).catch(() => {})}
+              accessibilityRole="link"
+            >
+              <Text style={styles.link}>Términos y condiciones completos ↗</Text>
+            </Pressable>
+          </View>
+
           <Text style={styles.note}>
-            Resumen orientativo. Revísalo y adáptalo con asesoría legal antes de
-            publicar en las tiendas.
+            Este es un resumen dentro de la app. Los documentos completos y
+            vigentes están en los enlaces de arriba.
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -105,6 +123,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     color: colors.textSecondary,
+  },
+  links: {
+    gap: spacing.sm,
+    marginTop: spacing.xl,
+  },
+  link: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: colors.emberBright,
   },
   note: {
     fontFamily: fonts.labelRegular,
