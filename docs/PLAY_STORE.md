@@ -119,7 +119,7 @@ Esto es justo lo que pide la política de UGC de Google; ecco lo cumple.
 
 ## 5. Campos de la App content / Store settings
 - **URL de política de privacidad:** el enlace de `privacy.html` de arriba.
-- **Email de contacto:** [tu email].
+- **Email de contacto:** perezantequerar@gmail.com.
 - **Anuncios:** No (por ahora la app no tiene anuncios).
 - **App de noticias / Gobierno / COVID / finanzas:** No.
 
