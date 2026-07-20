@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ecco — reserva tu plaza en la beta</title>
+<meta name="description" content="ecco: manda una voz al día a un desconocido del mundo y recibe la suya. Anónimo, exclusivo, internacional. Reserva tu plaza en la beta cerrada." />
+<meta property="og:title" content="ecco — voces anónimas" />
+<meta property="og:description" content="Manda una voz. Recibe la de un desconocido del mundo. Anónimo, una al día. Reserva tu plaza en la beta." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#140805; --bg2:#1a0b06; --panel:#20100a; --line:#3a2015; --line2:#5a3322;
+    --ink:#FBEDE4; --ink2:#c79a78; --muted:#9c6c4c;
+    --ember:#E8602C; --emberBright:#FF7A3D; --emberDeep:#c95a2a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px;
+    background:radial-gradient(120% 70% at 50% 0%, rgba(232,96,44,0.18) 0%, rgba(232,96,44,0) 55%), var(--bg)}
+  .wrap{width:100%;max-width:560px;text-align:center}
+  .orb{width:150px;height:150px;margin:0 auto 26px;position:relative}
+  .orb .ring{position:absolute;inset:0;margin:auto;border-radius:50%;border:1px solid rgba(255,122,61,0.16)}
+  @keyframes breathe{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.06);opacity:.9}}
+  .orb .core{position:absolute;inset:0;margin:auto;width:44px;height:44px;border-radius:50%;
+    background:radial-gradient(circle at 42% 38%, #FFC9A6, var(--emberBright) 34%, var(--ember) 74%, var(--emberDeep));
+    box-shadow:0 0 60px rgba(232,96,44,.55);animation:breathe 5s ease-in-out infinite}
+  @media(prefers-reduced-motion:reduce){.orb .core{animation:none}}
+  .brand{font-family:'Hanken Grotesk';font-weight:900;font-size:40px;letter-spacing:-0.05em}
+  .brand span{color:var(--emberBright)}
+  .kicker{font-family:'Space Grotesk';font-weight:500;font-size:13px;letter-spacing:0.3em;text-transform:uppercase;color:var(--emberBright);margin:22px 0 12px}
+  h1{font-family:'Hanken Grotesk';font-weight:900;font-size:clamp(34px,7vw,52px);line-height:1.02;letter-spacing:-0.03em;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--emberBright)}
+  .lead{color:var(--ink2);font-size:clamp(16px,2.6vw,19px);line-height:1.5;margin:18px auto 0;max-width:460px}
+  .lead b{color:var(--ink);font-weight:800}
+  .pills{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:26px 0 30px}
+  .pill{font-family:'Space Grotesk';font-weight:500;font-size:12.5px;letter-spacing:0.04em;color:var(--ink2);
+    border:1px solid var(--line2);border-radius:999px;padding:8px 15px;background:rgba(35,16,10,0.5)}
+  form{display:flex;gap:10px;flex-direction:column}
+  @media(min-width:460px){form{flex-direction:row}}
+  input[type=email]{flex:1;background:var(--panel);border:1px solid var(--line2);border-radius:14px;
+    color:var(--ink);font-family:'Hanken Grotesk';font-weight:500;font-size:17px;padding:18px 20px;outline:none}
+  input[type=email]::placeholder{color:var(--muted)}
+  input[type=email]:focus{border-color:var(--emberBright);box-shadow:0 0 0 3px rgba(232,96,44,0.2)}
+  button{cursor:pointer;border:0;border-radius:14px;padding:18px 26px;font-family:'Hanken Grotesk';font-weight:800;font-size:17px;
+    color:#1a0b06;background:linear-gradient(92deg,var(--emberBright),var(--emberDeep));
+    box-shadow:0 14px 36px rgba(232,96,44,0.35);transition:transform .12s ease,filter .12s ease;white-space:nowrap}
+  button:hover{filter:brightness(1.06)}button:active{transform:translateY(1px)}
+  button:disabled{opacity:.6;cursor:default}
+  .msg{margin-top:16px;font-family:'Space Grotesk';font-weight:500;font-size:14px;min-height:20px}
+  .msg.ok{color:var(--emberBright)}.msg.err{color:#ff8a8a}
+  .count{margin-top:24px;font-family:'Space Grotesk';font-weight:500;font-size:13px;letter-spacing:0.06em;color:var(--muted)}
+  .count b{color:var(--ink2);font-weight:700}
+  .foot{margin-top:34px;font-size:12px;color:var(--muted);line-height:1.5}
+  .foot a{color:var(--muted)}
+  .done h1{margin-bottom:10px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="orb" aria-hidden="true">
+      <div class="ring" style="width:100%"></div>
+      <div class="ring" style="width:66%"></div>
+      <div class="core"></div>
+    </div>
+    <div class="brand">ecco<span>.</span></div>
+
+    <div id="form-view">
+      <div class="kicker">Beta cerrada · plazas limitadas</div>
+      <h1>Entra antes<br>que <em>nadie</em>.</h1>
+      <p class="lead">Cada día mandas <b>una voz</b> a un desconocido de cualquier parte del mundo, recibes la suya y le pones <b>la canción</b> que quieras. Anónimo. Se escucha una vez. Déjanos tu correo y te avisamos de los primeros accesos.</p>
+      <div class="pills">
+        <span class="pill">100% anónimo</span>
+        <span class="pill">plazas limitadas</span>
+        <span class="pill">en todo el mundo</span>
+        <span class="pill">conexión real</span>
+      </div>
+      <form id="wl-form" novalidate>
+        <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="tu@correo.com" required aria-label="Tu correo" />
+        <button id="submit" type="submit">Reservar mi plaza</button>
+      </form>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+      <div class="count" id="count"></div>
+    </div>
+
+    <div id="done-view" class="done hide">
+      <div class="kicker">estás dentro</div>
+      <h1>Ya te tenemos<br>en la <em>lista</em>.</h1>
+      <p class="lead">Te avisaremos por correo en cuanto abramos plazas. Mientras tanto, síguenos en <b>@ecco.app</b> para no perderte nada.</p>
+    </div>
+
+    <div class="foot">
+      Al apuntarte aceptas nuestra
+      <a href="./privacy.html">política de privacidad</a>. Solo usamos tu correo para avisarte del lanzamiento. ecco es para mayores de 17 años.
+    </div>
+  </div>
+
+<script>
+  var SUPABASE_URL = 'https://wgrziufchibgwowfhyhp.supabase.co';
+  // Clave PUBLISHABLE (pública, segura para el navegador — no es la service_role).
+  var SUPABASE_KEY = 'sb_publishable_UNy7Dq_aJkx0IrLt4uQsMQ_QvS-ZrQr';
+
+  var form = document.getElementById('wl-form');
+  var emailEl = document.getElementById('email');
+  var btn = document.getElementById('submit');
+  var msg = document.getElementById('msg');
+
+  function fuente(){
+    try{ var p = new URLSearchParams(location.search).get('src'); return p || 'landing'; }catch(e){ return 'landing'; }
+  }
+
+  // Contador "X personas ya dentro"
+  fetch(SUPABASE_URL + '/rest/v1/rpc/lista_espera_total', {
+    method:'POST', headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' }, body:'{}'
+  }).then(function(r){ return r.ok ? r.json() : null; }).then(function(n){
+    if(typeof n === 'number' && n > 0){
+      document.getElementById('count').innerHTML = '<b>' + n + '</b> ' + (n===1?'persona ya':'personas ya') + ' en la lista';
+    }
+  }).catch(function(){});
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = (emailEl.value || '').trim();
+    var ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+    if(!ok){ msg.className='msg err'; msg.textContent='Escribe un correo válido.'; emailEl.focus(); return; }
+    btn.disabled = true; msg.className='msg'; msg.textContent='Guardando…';
+    fetch(SUPABASE_URL + '/rest/v1/lista_espera', {
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY,
+        'Content-Type':'application/json', 'Prefer':'return=minimal'
+      },
+      body: JSON.stringify({ email: email, fuente: fuente() })
+    }).then(function(r){
+      if(r.status === 201 || r.status === 204 || r.status === 409){
+        document.getElementById('form-view').classList.add('hide');
+        document.getElementById('done-view').classList.remove('hide');
+      } else {
+        return r.text().then(function(t){ throw new Error(t || ('HTTP '+r.status)); });
+      }
+    }).catch(function(err){
+      btn.disabled = false;
+      msg.className='msg err';
+      msg.textContent = 'No se pudo guardar. Inténtalo de nuevo en un momento.';
+    });
+  });
+</script>
+</body>
+</html>
