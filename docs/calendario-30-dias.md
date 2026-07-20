@@ -114,6 +114,22 @@ Estructura del mes:
 
 ---
 
+## Carruseles (días que van mejor como varias diapositivas)
+
+En `docs/social-assets/carruseles/` tienes 3 carruseles listos (súbelos como post de
+varias imágenes; la gente desliza y sube el tiempo de permanencia = más alcance):
+
+- **`carrusel-como-funciona`** (5 slides) → úsalo el **Día 8** en vez del post simple.
+- **`carrusel-voz-gana`** (5 slides) → úsalo el **Día 16**.
+- **`carrusel-beta`** (4 slides) → úsalo el **Día 23**.
+
+## Stories (refuerzo diario)
+
+En `docs/social-assets/stories/` tienes 8 stories (9:16) para subir al mismo tiempo que
+el post del feed y mandar tráfico: teaser, encuesta, canción, reacciones, testimonio,
+cuenta atrás, «desliza arriba» (beta) y «ya está aquí». La de **encuesta** funciona genial
+con el sticker de encuesta real de Instagram encima.
+
 ## Reglas de oro
 - **Reutiliza** el mismo gráfico en feed y story (recorta a 9:16 para story).
 - **Constancia > perfección**: mejor 1 post cada día que 5 un día y nada la semana siguiente.
