@@ -63,7 +63,7 @@ Estructura del mes:
 ## SEMANA 3 — prueba social + valor + manifiesto
 
 **Día 15 · `dia-15-testi-1`**
-> "recibí la voz de un desconocido y me alegró el día entero" — esto lo dijo alguien de la beta. y no es el único.
+> "me desahogué con alguien que no conozco y solté algo que llevaba años guardando". esto pasa en ecco. cada día.
 
 **Día 16 · `dia-16-valor-2`**
 > por qué la voz gana al texto: transmite emoción, es más real y se te queda. el texto se malinterpreta, la voz no.
@@ -78,7 +78,7 @@ Estructura del mes:
 > real talk: ¿cuántas notas de voz NO mandas por vergüenza? en ecco no te conocen. suéltala.
 
 **Día 20 · `dia-20-testi-2`**
-> "nunca pensé que escuchar a un extraño me iba a hacer sentir tan acompañado". gracias por esto 🥹
+> "le dije a un extraño lo que no me atrevo a decirle a nadie que conozco". a veces un desconocido es justo lo que necesitas.
 
 **Día 21 · `dia-21-no-red`**
 > esto no es una red social. es lo contrario. sin métricas, sin postureo, sin enganche tóxico. solo voces.
@@ -101,7 +101,7 @@ Estructura del mes:
 > últimas plazas de esta oleada. cuando se llenen, se cierra. sin dramas. no te quedes fuera.
 
 **Día 27 · `dia-27-testi-3`**
-> "es la primera app en años que no me deja vacío después de usarla". esto es justo lo que queríamos 🔥
+> "escuché a alguien roto al otro lado del mundo y le mandé fuerzas. ni sé quién es". esto es ecco 🔥
 
 **Día 28 · `dia-28-atras-1`**
 > la beta abre en 1 día. mañana. último aviso para reservar plaza: comenta «YO».
