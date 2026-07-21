@@ -18,6 +18,7 @@ import {
   GlobeIcon,
   SendIcon,
   ShareIcon,
+  SonarIcon,
 } from '@/components/icons';
 import { ReactionGlyph, type ReactionName } from '@/components/ReactionIcons';
 import {
@@ -122,7 +123,7 @@ export default function ActivityScreen() {
 
             {events.length === 0 ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyEmoji}>📡</Text>
+                <SonarIcon size={40} color={colors.textMuted} />
                 <Text style={styles.emptyTitle}>Aún no hay novedades</Text>
                 <Text style={styles.emptyText}>
                   Cuando alguien reaccione a tus voces, lo verás aquí.
@@ -257,7 +258,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.xxl,
   },
-  emptyEmoji: { fontSize: 48, marginBottom: spacing.md },
   emptyTitle: {
     fontFamily: fonts.display,
     fontSize: 22,

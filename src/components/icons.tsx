@@ -214,3 +214,126 @@ export function SendIcon({ size = 20, color = colors.textPrimary }: IconProps) {
     </Svg>
   );
 }
+
+/** Cascos (escuchar). */
+export function HeadphonesIcon({ size = 20, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M5 13v-1a7 7 0 0 1 14 0v1"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <Rect x={3} y={12.5} width={4.5} height={8} rx={2.25} stroke={color} strokeWidth={2} />
+      <Rect x={16.5} y={12.5} width={4.5} height={8} rx={2.25} stroke={color} strokeWidth={2} />
+    </Svg>
+  );
+}
+
+/** Marca de verificación (checkbox / éxito). */
+export function CheckIcon({ size = 16, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M20 6 9 17l-5-5"
+        stroke={color}
+        strokeWidth={2.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Ondas sonar (estados vacíos: "buscando voces"). */
+export function SonarIcon({ size = 20, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={2.4} fill={color} />
+      <Circle cx={12} cy={12} r={6.5} stroke={color} strokeWidth={1.8} opacity={0.6} />
+      <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={1.6} opacity={0.3} />
+    </Svg>
+  );
+}
+
+/** Pin de mapa (ubicación). */
+export function PinIcon({ size = 18, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 21s-7-5.3-7-11a7 7 0 1 1 14 0c0 5.7-7 11-7 11Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
+      <Circle cx={12} cy={10} r={2.6} stroke={color} strokeWidth={2} />
+    </Svg>
+  );
+}
+
+/** Eslabón de enlace (compartir enlace). */
+export function LinkIcon({ size = 18, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M10 14a5 5 0 0 0 7.1.4l2.4-2.4a5 5 0 0 0-7-7l-1.4 1.3M14 10a5 5 0 0 0-7.1-.4L4.5 12a5 5 0 0 0 7 7l1.4-1.3"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+/** Barras de métricas. */
+export function ChartIcon({ size = 18, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 20V10M12 20V4M20 20v-7" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** Escudo (moderación). */
+export function ShieldIcon({ size = 18, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 3 5 6v5c0 4.6 3 8.4 7 10 4-1.6 7-5.4 7-10V6l-7-3Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Luna (vuelven mañana). */
+export function MoonIcon({ size = 18, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Insignia de verificación (rosetón + check). */
+export function BadgeCheckIcon({ size = 18, color = colors.textPrimary }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="m12 2 2.4 1.8 3-.3 1.1 2.8 2.8 1.1-.3 3L23 12l-2 2.4.3 3-2.8 1.1-1.1 2.8-3-.3L12 23l-2.4-2-3 .3-1.1-2.8L2.7 17l.3-3L1 12l2-2.4-.3-3L5.5 5.5l1.1-2.8 3 .3L12 2Z"
+        stroke={color}
+        strokeWidth={1.7}
+        strokeLinejoin="round"
+      />
+      <Path d="m8.5 12 2.4 2.4 4.6-4.8" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}

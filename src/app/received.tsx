@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { EmberBackground } from '@/components/EmberBackground';
-import { ArrowLeftIcon, LockIcon, PauseIcon, PlayIcon } from '@/components/icons';
+import { ArrowLeftIcon, InboxIcon, LockIcon, PauseIcon, PlayIcon, SonarIcon } from '@/components/icons';
 import { ReactionGlyph, type ReactionName } from '@/components/ReactionIcons';
 import { flagFor } from '@/constants/countries';
 import { haptics } from '@/lib/haptics';
@@ -203,7 +203,11 @@ function Lists({ tab }: { tab: Tab }) {
   if (list.length === 0) {
     return (
       <View style={styles.center}>
-        <Text style={styles.bigEmoji}>{tab === 'received' ? '📭' : '📡'}</Text>
+        {tab === 'received' ? (
+          <InboxIcon size={44} color={colors.textMuted} />
+        ) : (
+          <SonarIcon size={44} color={colors.textMuted} />
+        )}
         <Text style={styles.emptyTitle}>
           {tab === 'received' ? t('rcv.emptyInT') : t('rcv.emptyOutT')}
         </Text>
@@ -467,10 +471,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
-  },
-  bigEmoji: {
-    fontSize: 56,
-    marginBottom: spacing.lg,
   },
   emptyTitle: {
     fontFamily: fonts.display,

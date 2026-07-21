@@ -16,6 +16,7 @@ import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { CountrySearch } from '@/components/CountrySearch';
 import { EmberBackground } from '@/components/EmberBackground';
 import { WorldMapPicker } from '@/components/WorldMapPicker';
+import { CheckIcon } from '@/components/icons';
 import { type Country, detectCountry, flagFor } from '@/constants/countries';
 import { t } from '@/lib/i18n';
 import { getApproxLocation } from '@/lib/location';
@@ -166,7 +167,7 @@ export default function SetupScreen() {
               accessibilityLabel={t('setup.age')}
             >
               <View style={[styles.checkbox, over17 && styles.checkboxOn]}>
-                {over17 && <Text style={styles.checkboxMark}>✓</Text>}
+                {over17 && <CheckIcon size={13} color={colors.textOnEmber} />}
               </View>
               <Text style={styles.ageText}>
                 {t('setup.age')}
@@ -182,7 +183,7 @@ export default function SetupScreen() {
               accessibilityLabel={t('setup.consentAi')}
             >
               <View style={[styles.checkbox, consentAi && styles.checkboxOn]}>
-                {consentAi && <Text style={styles.checkboxMark}>✓</Text>}
+                {consentAi && <CheckIcon size={13} color={colors.textOnEmber} />}
               </View>
               <Text style={styles.ageText}>
                 <Text style={styles.optional}>{t('setup.optional')}</Text>
@@ -333,11 +334,6 @@ const styles = StyleSheet.create({
   checkboxOn: {
     backgroundColor: colors.ember,
     borderColor: colors.ember,
-  },
-  checkboxMark: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    color: '#ffffff',
   },
   ageText: {
     flex: 1,

@@ -22,7 +22,9 @@ import {
   EqualizerIcon,
   ExternalPlayIcon,
   FlagIcon,
+  CheckIcon,
   MicIcon,
+  SonarIcon,
 } from '@/components/icons';
 import { ReactionsRow } from '@/components/ReactionsRow';
 import { RetentionCard } from '@/components/RetentionCard';
@@ -173,12 +175,12 @@ function VoiceInner() {
   if (status !== 'ready') {
     const copy = {
       needSend: {
-        emoji: '🎙️',
+        Icon: MicIcon,
         title: t('voice.needSendTitle'),
         subtitle: t('voice.needSendSub'),
       },
       error: {
-        emoji: '😕',
+        Icon: SonarIcon,
         title: t('voice.errorTitle'),
         subtitle: t('voice.errorSub'),
       },
@@ -187,7 +189,7 @@ function VoiceInner() {
     return (
       <View style={styles.flexBody}>
         <Centered>
-          <Text style={styles.bigEmoji}>{copy.emoji}</Text>
+          <copy.Icon size={44} color={colors.textMuted} />
           <Text style={styles.title}>{copy.title}</Text>
           <Text style={styles.subtitle}>{copy.subtitle}</Text>
         </Centered>
@@ -356,7 +358,7 @@ function VoiceInner() {
                   accessibilityState={{ checked: alsoBlock }}
                 >
                   <View style={[styles.sheetCheck, alsoBlock && styles.sheetCheckOn]}>
-                    {alsoBlock && <Text style={styles.sheetCheckMark}>✓</Text>}
+                    {alsoBlock && <CheckIcon size={13} color={colors.textOnEmber} />}
                   </View>
                   <Text style={styles.sheetBlockText}>{t('voice.alsoBlock')}</Text>
                 </Pressable>
@@ -573,11 +575,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ember,
     borderColor: colors.ember,
   },
-  sheetCheckMark: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    color: '#ffffff',
-  },
   sheetBlockText: {
     fontFamily: fonts.labelRegular,
     fontSize: 13,
@@ -614,9 +611,5 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
-  },
-  bigEmoji: {
-    fontSize: 56,
-    marginBottom: spacing.lg,
   },
 });

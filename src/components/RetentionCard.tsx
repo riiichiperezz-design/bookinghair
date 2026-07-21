@@ -3,6 +3,7 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { GhostButton } from '@/components/buttons';
+import { FlameIcon } from './icons';
 import { haptics } from '@/lib/haptics';
 import { t } from '@/lib/i18n';
 import { enableDailyReminder } from '@/lib/notifications';
@@ -51,9 +52,9 @@ export function RetentionCard() {
 
   return (
     <View style={styles.container}>
-      <Animated.Text style={styles.flame} entering={ZoomIn.duration(420)}>
-        🔥
-      </Animated.Text>
+      <Animated.View entering={ZoomIn.duration(420)}>
+        <FlameIcon size={40} color={colors.emberBright} />
+      </Animated.View>
 
       {streak > 0 && (
         <Animated.View
@@ -103,10 +104,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-  },
-  flame: {
-    fontSize: 60,
-    marginBottom: spacing.md,
   },
   streakPill: {
     backgroundColor: colors.surfaceElevated,

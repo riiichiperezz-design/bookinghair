@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 
 import { PrimaryButton } from '@/components/buttons';
+import { FlameIcon } from './icons';
 import { colors, fonts, spacing } from '@/theme';
 
 const MILESTONES = new Set([3, 7, 14, 30, 50, 75, 100, 200, 365]);
@@ -24,7 +25,7 @@ export function StreakCelebration({ count, onClose }: Props) {
       pointerEvents="auto"
     >
       <Animated.View entering={ZoomIn.duration(420)} style={styles.card}>
-        <Text style={styles.flame}>🔥</Text>
+        <FlameIcon size={46} color={colors.emberBright} />
         <Text style={styles.count}>{count}</Text>
         <Text style={styles.title}>¡{count} días de racha!</Text>
         <Text style={styles.subtitle}>
@@ -61,9 +62,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxl,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
-  },
-  flame: {
-    fontSize: 64,
   },
   count: {
     fontFamily: fonts.display,

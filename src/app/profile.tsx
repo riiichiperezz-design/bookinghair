@@ -17,7 +17,7 @@ import { Avatar, type Badge } from '@/components/Avatar';
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { CountrySearch } from '@/components/CountrySearch';
 import { EmberBackground } from '@/components/EmberBackground';
-import { ArrowLeftIcon } from '@/components/icons';
+import { ArrowLeftIcon, CheckIcon } from '@/components/icons';
 import { WorldMapPicker } from '@/components/WorldMapPicker';
 import { type Country, flagFor } from '@/constants/countries';
 import { deleteMyData, getAccountEmail, linkAccount } from '@/lib/account';
@@ -334,7 +334,7 @@ export default function ProfileScreen() {
                 accessibilityState={{ checked: consentAi }}
               >
                 <View style={[styles.checkbox, consentAi && styles.checkboxOn]}>
-                  {consentAi && <Text style={styles.checkboxMark}>✓</Text>}
+                  {consentAi && <CheckIcon size={13} color={colors.textOnEmber} />}
                 </View>
                 <Text style={styles.consentText}>{t('setup.consentAi')}</Text>
               </Pressable>
@@ -534,11 +534,6 @@ const styles = StyleSheet.create({
   checkboxOn: {
     backgroundColor: colors.ember,
     borderColor: colors.ember,
-  },
-  checkboxMark: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    color: '#ffffff',
   },
   linkRow: {
     paddingVertical: spacing.md,

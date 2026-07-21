@@ -4,15 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
+import {
+  FlameIcon,
+  GlobeIcon,
+  HeadphonesIcon,
+  MicIcon,
+} from '@/components/icons';
 import { t } from '@/lib/i18n';
 import { enableDailyReminder } from '@/lib/notifications';
 import { colors, fonts, radius, spacing } from '@/theme';
 
 const STEPS = [
-  { emoji: '🎙️', title: t('intro.s1t'), text: t('intro.s1x') },
-  { emoji: '🌍', title: t('intro.s2t'), text: t('intro.s2x') },
-  { emoji: '🔥', title: t('intro.s3t'), text: t('intro.s3x') },
-  { emoji: '🎧', title: t('intro.s4t'), text: t('intro.s4x') },
+  { Icon: MicIcon, title: t('intro.s1t'), text: t('intro.s1x') },
+  { Icon: GlobeIcon, title: t('intro.s2t'), text: t('intro.s2x') },
+  { Icon: FlameIcon, title: t('intro.s3t'), text: t('intro.s3x') },
+  { Icon: HeadphonesIcon, title: t('intro.s4t'), text: t('intro.s4x') },
 ];
 
 export default function IntroScreen() {
@@ -30,7 +36,7 @@ export default function IntroScreen() {
             {STEPS.map((s) => (
               <View key={s.title} style={styles.step}>
                 <View style={styles.stepIcon}>
-                  <Text style={styles.stepEmoji}>{s.emoji}</Text>
+                  <s.Icon size={24} color={colors.emberBright} />
                 </View>
                 <View style={styles.stepBody}>
                   <Text style={styles.stepTitle}>{s.title}</Text>
@@ -95,7 +101,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepEmoji: { fontSize: 24 },
   stepBody: { flex: 1 },
   stepTitle: {
     fontFamily: fonts.bodyBold,

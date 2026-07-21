@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AudioPlayerCard } from '@/components/AudioPlayerCard';
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
-import { ArrowLeftIcon, InboxIcon } from '@/components/icons';
+import { ArrowLeftIcon, FlameIcon, GlobeIcon, InboxIcon } from '@/components/icons';
 import { RecordButton } from '@/components/RecordButton';
 import { SongPicker } from '@/components/SongPicker';
 import { hoursToUtcMidnight } from '@/lib/day';
@@ -208,9 +208,9 @@ function Recorder() {
     const horas = hoursToUtcMidnight();
     return (
       <View style={styles.center}>
-        <Animated.Text style={styles.bigEmoji} entering={ZoomIn.duration(420)}>
-          🌍
-        </Animated.Text>
+        <Animated.View style={styles.bigIcon} entering={ZoomIn.duration(420)}>
+          <GlobeIcon size={44} color={colors.emberBright} />
+        </Animated.View>
         <Text style={styles.title}>{t('record.doneTitle')}</Text>
         <Text style={styles.subtitle}>{t('record.doneSubtitle', { n: horas })}</Text>
         <View style={styles.sentActions}>
@@ -231,9 +231,9 @@ function Recorder() {
   if (sent) {
     return (
       <View style={styles.center}>
-        <Animated.Text style={styles.bigEmoji} entering={ZoomIn.duration(420)}>
-          🔥
-        </Animated.Text>
+        <Animated.View style={styles.bigIcon} entering={ZoomIn.duration(420)}>
+          <FlameIcon size={44} color={colors.emberBright} />
+        </Animated.View>
         <Text style={styles.title}>{t('record.sentTitle')}</Text>
         <Text style={styles.subtitle}>{t('record.sentSubtitle')}</Text>
 
@@ -390,8 +390,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.md,
   },
-  bigEmoji: {
-    fontSize: 56,
+  bigIcon: {
     marginBottom: spacing.lg,
   },
   sentActions: {

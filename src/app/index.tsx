@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GhostButton, PrimaryButton } from '@/components/buttons';
 import { EmberBackground } from '@/components/EmberBackground';
-import { BellIcon, InboxIcon } from '@/components/icons';
+import { BellIcon, FlameIcon, InboxIcon } from '@/components/icons';
 import {
   isStreakMilestone,
   StreakCelebration,
@@ -92,7 +92,8 @@ export default function Home() {
         <View style={styles.topBar}>
           {streak > 0 ? (
             <View style={styles.streakChip}>
-              <Text style={styles.streakText}>🔥 {streak}</Text>
+              <FlameIcon size={14} color={colors.emberBright} />
+              <Text style={styles.streakText}>{streak}</Text>
             </View>
           ) : (
             <View />
@@ -205,6 +206,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   streakChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     backgroundColor: colors.surfaceElevated,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,

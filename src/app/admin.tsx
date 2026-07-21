@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmberBackground } from '@/components/EmberBackground';
-import { ArrowLeftIcon, PlayIcon } from '@/components/icons';
+import { ArrowLeftIcon, LockIcon, PlayIcon } from '@/components/icons';
 import { etiquetaCategoria } from '@/constants/moderacion';
 import {
   adminSignedUrl,
@@ -121,7 +121,7 @@ function AdminInner() {
   if (status === 'denied') {
     return (
       <View style={styles.center}>
-        <Text style={styles.bigEmoji}>🔒</Text>
+        <LockIcon size={40} color={colors.textMuted} />
         <Text style={styles.deniedTitle}>Solo para moderadores</Text>
       </View>
     );
@@ -140,7 +140,7 @@ function AdminInner() {
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.section}>Cola de revisión ({cola.length})</Text>
-      {cola.length === 0 && <Text style={styles.empty}>Nada pendiente. 👌</Text>}
+      {cola.length === 0 && <Text style={styles.empty}>Nada pendiente.</Text>}
       {cola.map((c) => (
         <Item
           key={c.audio_id}
@@ -227,7 +227,6 @@ const styles = StyleSheet.create({
   },
   headerSpacer: { width: 22 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  bigEmoji: { fontSize: 48, marginBottom: spacing.md },
   deniedTitle: {
     fontFamily: fonts.display,
     fontSize: 22,
