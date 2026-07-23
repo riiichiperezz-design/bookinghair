@@ -9,10 +9,10 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#140805",
     "ios": {
-      "bundleIdentifier": "com.ecco.app"
+      "bundleIdentifier": "com.riiichiperezz.ecco"
     },
     "android": {
-      "package": "com.ecco.app",
+      "package": "com.riiichiperezz.ecco",
       "adaptiveIcon": {
         "backgroundColor": "#140805",
         "foregroundImage": "./assets/images/adaptive-icon.png"
